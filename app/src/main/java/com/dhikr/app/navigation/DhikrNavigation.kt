@@ -78,7 +78,8 @@ fun DhikrNavigation() {
                 }
                 entry<LibraryRoute> {
                     LibraryHost(
-                        viewModel { LibraryViewModel(container.dhikrRepository) },
+                        viewModel { LibraryViewModel(container.dhikrRepository, container.audioStore) },
+                        container.audio,
                         viewModel { PrayerSetViewModel(container.dhikrRepository) },
                     )
                 }
@@ -87,6 +88,7 @@ fun DhikrNavigation() {
                     SettingsScreen(
                         viewModel { SettingsViewModel(container.preferences, container.haptics) },
                         container.haptics,
+                        container.audio,
                     )
                 }
                 entry<CounterRoute> { key ->
@@ -100,6 +102,7 @@ fun DhikrNavigation() {
                             )
                         },
                         container.haptics,
+                        container.audio,
                         onBack = { backStack.removeLastOrNull() },
                     )
                 }

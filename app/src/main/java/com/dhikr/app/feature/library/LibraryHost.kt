@@ -22,7 +22,7 @@ import com.dhikr.app.design.theme.DhikrTheme
 
 /** Library tab: the dhikr library and the after-prayer set editor, side by side as two views. */
 @Composable
-fun LibraryHost(library: LibraryViewModel, prayerSet: PrayerSetViewModel, startOnPrayerSet: Boolean = false) {
+fun LibraryHost(library: LibraryViewModel, audio: com.dhikr.app.audio.AudioCuePlayer, prayerSet: PrayerSetViewModel, startOnPrayerSet: Boolean = false) {
     val sp = DhikrTheme.spacing
     var showPrayerSet by rememberSaveable { mutableStateOf(startOnPrayerSet) }
     Column(Modifier.fillMaxSize().background(DhikrTheme.colors.canvas)) {
@@ -35,6 +35,6 @@ fun LibraryHost(library: LibraryViewModel, prayerSet: PrayerSetViewModel, startO
             }
             Spacer(Modifier.height(sp.m))
         }
-        if (showPrayerSet) PrayerSetScreen(prayerSet) else LibraryScreen(library)
+        if (showPrayerSet) PrayerSetScreen(prayerSet) else LibraryScreen(library, audio)
     }
 }

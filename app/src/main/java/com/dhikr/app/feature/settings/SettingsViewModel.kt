@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.dhikr.app.core.model.AfterTarget
 import com.dhikr.app.core.model.BeadStyle
 import com.dhikr.app.core.model.SpringFeel
+import com.dhikr.app.core.model.SwitchSound
 import com.dhikr.app.core.model.TapHaptic
 import com.dhikr.app.core.model.TargetHaptic
 import com.dhikr.app.core.model.ThemeMode
@@ -25,6 +26,8 @@ class SettingsViewModel(private val repo: PreferencesRepository, haptics: Haptic
     fun setTapHaptic(h: TapHaptic) = save { repo.setTapHaptic(h) }
     fun setTargetHaptic(h: TargetHaptic) = save { repo.setTargetHaptic(h) }
     fun setAfterTarget(a: AfterTarget) = save { repo.setAfterTarget(a) }
+    fun setSwitchSound(s: SwitchSound) = save { repo.setSwitchSound(s) }
+    fun setReciteWhileCounting(on: Boolean) = save { repo.setReciteWhileCounting(on) }
 
     private fun save(block: suspend () -> Unit) {
         viewModelScope.launch { block() }

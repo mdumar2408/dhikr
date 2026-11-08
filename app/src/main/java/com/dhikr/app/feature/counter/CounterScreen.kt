@@ -68,20 +68,27 @@ import com.dhikr.app.design.dotmatrix.DotGrid
 import com.dhikr.app.design.dotmatrix.DotMatrixText
 import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.haptics.HapticPlayer
+import com.dhikr.app.audio.AudioCuePlayer
+import androidx.lifecycle.compose.LifecycleStartEffect
 
 @Composable
-fun CounterScreen(viewModel: CounterViewModel, haptics: HapticPlayer, onBack: () -> Unit) {
+fun CounterScreen(viewModel: CounterViewModel, haptics: HapticPlayer, audio: AudioCuePlayer, onBack: () -> Unit) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val view = LocalView.current
+    // Leaving the counter (or the app going to background) stops any recitation.
+    LifecycleStartEffect(Unit) { onStopOrDispose { audio.stop() } }
     CounterContent(
         state = state,
         onTap = {
             val event = viewModel.onTap()
+            // Feedback order (tactile skill): state first, then haptic, then sound — same frame.
             haptics.onFlowEvent(view, event, state.feel.tapHaptic, state.feel.targetHaptic)
+            audio.onFlowEvent(event, state.sound)
         },
         onUndo = viewModel::onUndo,
         onReset = viewModel::onReset,
         onSwipe = viewModel::onSwipe,
+        onToggleRecite = viewModel::onToggleRecite,
         onBack = onBack,
     )
 }
@@ -93,6 +100,7 @@ fun CounterContent(
     onUndo: () -> Unit,
     onReset: () -> Unit,
     onSwipe: (Int) -> Unit,
+    onToggleRecite: () -> Unit,
     onBack: () -> Unit,
 ) {
     val c = DhikrTheme.colors
@@ -220,6 +228,15 @@ fun CounterContent(
                 Modifier.defaultMinSize(56.dp, 48.dp).clip(RoundedCornerShape(50)).clickable(onClick = onUndo).padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center,
             ) { MonoLabel("Undo") }
+            if (dhikr?.audioRef != null) {
+                // Quick toggle for "recite while counting" — only when this dhikr has a recording.
+                Box(
+                    Modifier.defaultMinSize(56.dp, 48.dp).clip(RoundedCornerShape(50)).clickable(onClick = onToggleRecite)
+                        .semantics { contentDescription = "Recite while counting: ${if (state.sound.reciteWhileCounting) "on" else "off"}" }
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) { MonoLabel(if (state.sound.reciteWhileCounting) "♪ On" else "♪ Off", color = if (state.sound.reciteWhileCounting) c.ink else c.inkFaint) }
+            }
             HoldToReset(onReset)
         }
     }

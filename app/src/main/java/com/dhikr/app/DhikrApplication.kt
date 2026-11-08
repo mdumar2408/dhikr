@@ -3,6 +3,8 @@ package com.dhikr.app
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import com.dhikr.app.audio.AudioCuePlayer
+import com.dhikr.app.audio.AudioStore
 import com.dhikr.app.data.database.DhikrDatabase
 import com.dhikr.app.data.progress.CounterEngine
 import com.dhikr.app.data.progress.RoomProgressStore
@@ -32,6 +34,8 @@ class AppContainer(context: Context) {
     val dhikrRepository: DhikrRepository by lazy { DhikrRepository(database.dhikrDao(), database.prayerSetDao(), clock) }
     val preferences: PreferencesRepository = PreferencesRepository.create(context, appScope)
     val haptics = HapticPlayer(context)
+    val audioStore = AudioStore(context.filesDir, context.contentResolver)
+    val audio: AudioCuePlayer by lazy { AudioCuePlayer(context, audioStore) }
 
     /** The one counter engine for every surface (app now; widgets/notification later). */
     val engine: CounterEngine by lazy {

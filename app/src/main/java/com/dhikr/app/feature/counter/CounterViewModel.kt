@@ -6,6 +6,7 @@ import com.dhikr.app.core.model.AfterTarget
 import com.dhikr.app.core.model.CountContext
 import com.dhikr.app.core.model.CountingFeel
 import com.dhikr.app.core.model.Dhikr
+import com.dhikr.app.core.model.SoundSettings
 import com.dhikr.app.data.preferences.PreferencesRepository
 import com.dhikr.app.data.progress.CounterEngine
 import com.dhikr.app.design.components.RoutineDotState
@@ -46,6 +47,7 @@ data class CounterUiState(
     val routineSize: Int = 0,
     val routineDots: List<RoutineDotState> = emptyList(),
     val feel: CountingFeel = CountingFeel(),
+    val sound: SoundSettings = SoundSettings(),
     val announcement: Announcement? = null,
 ) {
     /** Daily Flow vs. classic single counter; prayer sessions always flow. */
@@ -69,12 +71,17 @@ class CounterViewModel(
     }
 
     val uiState: StateFlow<CounterUiState> =
-        combine(engine.state, prefs.prefs, announcement) { s, p, a -> project(s.session(context), p.feel, a) }
+        combine(engine.state, prefs.prefs, announcement) { s, p, a -> project(s.session(context), p.feel, a).copy(sound = p.sound) }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5_000),
-                project(engine.state.value.session(context), prefs.prefs.value.feel, null),
+                project(engine.state.value.session(context), prefs.prefs.value.feel, null).copy(sound = prefs.prefs.value.sound),
             )
+
+    fun onToggleRecite() {
+        val on = !prefs.prefs.value.sound.reciteWhileCounting
+        viewModelScope.launch { prefs.setReciteWhileCounting(on) }
+    }
 
     /**
      * Called synchronously from the pad's tap handler. Returns the event so the caller can fire

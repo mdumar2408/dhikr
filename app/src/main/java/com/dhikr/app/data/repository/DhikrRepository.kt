@@ -130,6 +130,13 @@ class DhikrRepository(
 
     suspend fun setEnabled(id: Long, enabled: Boolean) = dao.setEnabled(id, enabled, clock.millis())
 
+    /** Attach (or with null, detach) an app-private recording. Returns the previous ref so the caller can delete the file. */
+    suspend fun setAudio(id: Long, ref: String?): String? {
+        val previous = dao.byId(id)?.audioRef
+        dao.setAudio(id, ref, clock.millis())
+        return previous
+    }
+
     /** Soft delete: hidden from the library, history kept. Returns the previous enabled state for undo. */
     suspend fun delete(id: Long): Boolean {
         val wasEnabled = dao.byId(id)?.isEnabled ?: false
@@ -154,4 +161,5 @@ internal fun DhikrEntity.toDomain() = Dhikr(
     sortOrder = sortOrder,
     reference = reference,
     isSystemProvided = isSystemProvided,
+    audioRef = audioRef,
 )

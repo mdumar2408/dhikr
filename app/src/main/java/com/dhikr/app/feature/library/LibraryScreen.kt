@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import android.view.HapticFeedbackConstants
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dhikr.app.audio.AudioCuePlayer
 import com.dhikr.app.core.model.Dhikr
 import com.dhikr.app.design.components.Hairline
 import com.dhikr.app.design.components.MonoLabel
@@ -53,7 +54,7 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
-fun LibraryScreen(viewModel: LibraryViewModel) {
+fun LibraryScreen(viewModel: LibraryViewModel, audio: AudioCuePlayer) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
 
@@ -82,6 +83,9 @@ fun LibraryScreen(viewModel: LibraryViewModel) {
             onSave = viewModel::onEditorSave,
             onDismiss = viewModel::onEditorDismiss,
             onDelete = { id, name -> viewModel.onDelete(id, name) },
+            onAudioPicked = viewModel::onAudioPicked,
+            onAudioPlay = audio::preview,
+            onAudioRemove = { audio.stop(); viewModel.onAudioRemove() },
         )
     }
 }

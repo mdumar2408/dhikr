@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.dhikr.app.core.model.ArabicText
 import com.dhikr.app.core.model.Dhikr
 import com.dhikr.app.core.model.DhikrDraft
+import android.net.Uri
+import com.dhikr.app.audio.AudioStore
 import com.dhikr.app.data.repository.DhikrRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +17,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The add/edit sheet: null id = adding. */
-data class Editor(val id: Long?, val draft: DhikrDraft, val errors: Set<DhikrDraft.Error> = emptySet())
+data class Editor(
+    val id: Long?,
+    val draft: DhikrDraft,
+    val errors: Set<DhikrDraft.Error> = emptySet(),
+    /** The dhikr's recording (saved immediately, independent of Save). */
+    val audioRef: String? = null,
+    val audioBusy: Boolean = false,
+    val audioMessage: String? = null,
+)
 
 /** A just-deleted entry, kept so the snackbar can undo it. */
 data class Deleted(val id: Long, val name: String, val wasEnabled: Boolean)
@@ -31,7 +41,7 @@ data class LibraryUiState(
     val canReorder: Boolean get() = query.isBlank()
 }
 
-class LibraryViewModel(private val repo: DhikrRepository) : ViewModel() {
+class LibraryViewModel(private val repo: DhikrRepository, private val audioStore: AudioStore) : ViewModel() {
 
     private val ui = MutableStateFlow(LibraryUiState())
 
@@ -52,7 +62,34 @@ class LibraryViewModel(private val repo: DhikrRepository) : ViewModel() {
     }
 
     fun onAdd() = ui.update { it.copy(editor = Editor(null, DhikrDraft())) }
-    fun onEdit(d: Dhikr) = ui.update { it.copy(editor = Editor(d.id, DhikrDraft.from(d))) }
+    fun onEdit(d: Dhikr) = ui.update { it.copy(editor = Editor(d.id, DhikrDraft.from(d), audioRef = d.audioRef)) }
+
+    /** A file picked with the system picker: copy it into the app and attach it (D-031). */
+    fun onAudioPicked(uri: Uri) {
+        val id = ui.value.editor?.id ?: return
+        setEditor { it.copy(audioBusy = true, audioMessage = null) }
+        viewModelScope.launch {
+            when (val r = audioStore.import(uri)) {
+                is AudioStore.ImportResult.Ok -> {
+                    repo.setAudio(id, r.ref)?.let { old -> audioStore.delete(old) }
+                    setEditor { it.copy(audioRef = r.ref, audioBusy = false, audioMessage = "Recording added") }
+                }
+                AudioStore.ImportResult.NotAudio -> setEditor { it.copy(audioBusy = false, audioMessage = "That file isn't audio.") }
+                AudioStore.ImportResult.TooLarge -> setEditor { it.copy(audioBusy = false, audioMessage = "That file is over 10 MB. Choose a shorter recording.") }
+                AudioStore.ImportResult.Failed -> setEditor { it.copy(audioBusy = false, audioMessage = "Couldn't read that file. Try another.") }
+            }
+        }
+    }
+
+    fun onAudioRemove() {
+        val id = ui.value.editor?.id ?: return
+        viewModelScope.launch {
+            repo.setAudio(id, null)?.let { old -> audioStore.delete(old) }
+            setEditor { it.copy(audioRef = null, audioMessage = "Recording removed") }
+        }
+    }
+
+    private fun setEditor(f: (Editor) -> Editor) = ui.update { s -> s.copy(editor = s.editor?.let(f)) }
     fun onEditorChange(draft: DhikrDraft) = ui.update { s -> s.copy(editor = s.editor?.copy(draft = draft, errors = emptySet())) }
     fun onEditorDismiss() = ui.update { it.copy(editor = null) }
 

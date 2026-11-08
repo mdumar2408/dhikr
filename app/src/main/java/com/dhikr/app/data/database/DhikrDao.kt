@@ -40,6 +40,9 @@ interface DhikrDao {
     @Query("UPDATE dhikr SET is_enabled = :enabled, updated_at = :now WHERE id = :id")
     suspend fun setEnabled(id: Long, enabled: Boolean, now: Long)
 
+    @Query("UPDATE dhikr SET audio_ref = :ref, updated_at = :now WHERE id = :id")
+    suspend fun setAudio(id: Long, ref: String?, now: Long)
+
     @Query("UPDATE dhikr SET deleted_at = :now, is_enabled = 0, updated_at = :now WHERE id = :id")
     suspend fun softDelete(id: Long, now: Long)
 

@@ -46,6 +46,14 @@ class UserPreferencesSerializerTest {
     }
 
     @Test
+    fun `a file from before Phase 4 loads with sound defaults`() = runTest {
+        val p = read("""{"themeMode":"Light","feel":{"beadStyle":"Ring"}}""")
+        assertEquals(com.dhikr.app.core.model.SwitchSound.Chime, p.sound.switchSound)
+        assertEquals(false, p.sound.reciteWhileCounting)
+        assertEquals(BeadStyle.Ring, p.feel.beadStyle)
+    }
+
+    @Test
     fun `garbage is reported as corruption`() = runTest {
         try {
             read("not json")

@@ -11,6 +11,7 @@ import com.dhikr.app.core.model.AfterTarget
 import com.dhikr.app.core.model.BeadStyle
 import com.dhikr.app.core.model.CountingFeel
 import com.dhikr.app.core.model.SpringFeel
+import com.dhikr.app.core.model.SwitchSound
 import com.dhikr.app.core.model.TapHaptic
 import com.dhikr.app.core.model.TargetHaptic
 import com.dhikr.app.core.model.ThemeMode
@@ -66,6 +67,9 @@ class PreferencesRepository(private val store: DataStore<UserPreferences>, scope
     suspend fun setTapHaptic(v: TapHaptic) = updateFeel { it.copy(tapHaptic = v) }
     suspend fun setTargetHaptic(v: TargetHaptic) = updateFeel { it.copy(targetHaptic = v) }
     suspend fun setAfterTarget(v: AfterTarget) = updateFeel { it.copy(afterTarget = v) }
+
+    suspend fun setSwitchSound(v: SwitchSound) = store.updateData { it.copy(sound = it.sound.copy(switchSound = v)) }
+    suspend fun setReciteWhileCounting(v: Boolean) = store.updateData { it.copy(sound = it.sound.copy(reciteWhileCounting = v)) }
 
     private suspend fun updateFeel(f: (CountingFeel) -> CountingFeel) = store.updateData { it.copy(feel = f(it.feel)) }
 

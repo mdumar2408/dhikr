@@ -15,6 +15,8 @@ data class Dhikr(
     /** Source or note, e.g. "Sahih Muslim 597a". Empty for user-made entries without one. */
     val reference: String = "",
     val isSystemProvided: Boolean = false,
+    /** App-private audio file ("audio/<uuid>.<ext>" under filesDir), or null. */
+    val audioRef: String? = null,
 ) {
     init {
         require(target > 0) { "target must be positive" }

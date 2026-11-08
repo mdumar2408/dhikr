@@ -41,11 +41,15 @@ import com.dhikr.app.design.components.PillChip
 import com.dhikr.app.design.dotmatrix.DotMatrixLabel
 import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.haptics.HapticPlayer
+import com.dhikr.app.audio.AudioCuePlayer
+import com.dhikr.app.audio.Cue
+import com.dhikr.app.core.model.SwitchSound
+import androidx.compose.material3.Text
 
 private const val PREVIEW_TARGET = 11
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer) {
+fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: AudioCuePlayer) {
     val prefs by viewModel.prefs.collectAsStateWithLifecycle()
     val feel = prefs.feel
     val view = LocalView.current
@@ -84,6 +88,32 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer) {
             AfterTarget.entries, feel.afterTarget,
             { if (it == AfterTarget.NextDhikr) "Move to next dhikr" else "Stay on this dhikr" },
             viewModel::setAfterTarget,
+        )
+
+        Section("Sound")
+        Label("When moving to the next dhikr")
+        Options(
+            SwitchSound.entries, prefs.sound.switchSound,
+            {
+                when (it) {
+                    SwitchSound.Off -> "Off"
+                    SwitchSound.Chime -> "Chime"
+                    SwitchSound.ReciteNext -> "Recite next"
+                }
+            },
+        ) {
+            viewModel.setSwitchSound(it)
+            if (it != SwitchSound.Off) audio.play(Cue.Chime()) // preview
+        }
+        Text(
+            "The chime is silent when your phone is on silent or vibrate. \"Recite next\" plays the next dhikr's own recording, or the chime if it has none.",
+            color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
+        )
+        Label("Recite while counting")
+        Options(listOf(false, true), prefs.sound.reciteWhileCounting, { if (it) "On" else "Off" }, viewModel::setReciteWhileCounting)
+        Text(
+            "Plays a dhikr's recording as you count, never overlapping itself. Add recordings when editing a dhikr in Library.",
+            color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
         )
         Spacer(Modifier.height(sp.xxl))
     }

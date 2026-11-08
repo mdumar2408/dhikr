@@ -1,5 +1,15 @@
 # Development Progress
 
+## Phase 4 — Audio and cues (built 2026-11-08, awaiting owner listening test)
+
+- **Switch chime** (default): synthesized two-tone bell, about 260 ms; double chime when a routine or prayer set completes. Silent when the phone is on silent or vibrate (D-029/D-030).
+- **Recite next**: plays the next dhikr's own recording at each switch (chime fallback).
+- **Recite while counting**: optional, never overlaps. A quick ♪ toggle on the counter when the dhikr has a recording.
+- **Recordings per dhikr**: Library → edit → Add recording / Play / Replace / Remove. Copied into the app (≤ 10 MB, D-031). Rights reminder shown.
+- Settings → **Sound** section with a chime preview.
+- Tests: **49 unit pass** (cue policy, chime synthesis, pre-Phase-4 prefs file loads with sound defaults, plus all earlier). **On device: 15/15 pass** (rerun with the phone unlocked), including AudioOnDeviceTest (import copies the WAV and survives deleting the original; refs can't escape the folder; MediaPlayer recitation plays, no overlap, stops) and BeadPadTest. Note: Compose UI tests need the phone awake and unlocked.
+- **Needs the owner's ears**: chime loudness and feel, and a real recording via the picker. Can't be verified by me.
+
 ## Phase 3 — Counter engine and the two practices (done 2026-11-08, awaiting owner review)
 
 - **CounterEngine** (D-026): persistent counts per (dhikr, date, context), atomic SQL increments, ordered write queue, merges external writes, midnight rollover. Undo is session-only (D-027).

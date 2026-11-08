@@ -37,8 +37,23 @@ data class CountingFeel(
     val afterTarget: AfterTarget = AfterTarget.NextDhikr,
 )
 
+/** What you hear when Flow moves to the next dhikr (DESIGN_SPEC §14.5, D-030). */
+@Serializable enum class SwitchSound { Off, Chime, ReciteNext }
+
+/**
+ * Sound settings (Phase 4). Sounds are always optional: the counter is fully usable silent.
+ * The chime follows the ringer (silent/vibrate → no chime); recitations play as media.
+ */
+@Serializable
+data class SoundSettings(
+    val switchSound: SwitchSound = SwitchSound.Chime,
+    /** Play the current dhikr's own recording while counting; never overlaps itself. */
+    val reciteWhileCounting: Boolean = false,
+)
+
 @Serializable
 data class UserPreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val feel: CountingFeel = CountingFeel(),
+    val sound: SoundSettings = SoundSettings(),
 )

@@ -1,5 +1,8 @@
 package com.dhikr.app.feature.library
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,11 +59,18 @@ fun DhikrEditorSheet(
     onSave: () -> Unit,
     onDismiss: () -> Unit,
     onDelete: (id: Long, name: String) -> Unit,
+    onAudioPicked: (Uri) -> Unit = {},
+    onAudioPlay: (String) -> Unit = {},
+    onAudioRemove: () -> Unit = {},
 ) {
     val c = DhikrTheme.colors
     val sp = DhikrTheme.spacing
     val d = editor.draft
     var confirmDelete by remember { mutableStateOf(false) }
+    // System file picker (Storage Access Framework): no storage permission needed.
+    val pickAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(onAudioPicked)
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -91,6 +101,28 @@ fun DhikrEditorSheet(
             }
             Spacer(Modifier.height(sp.s))
             Field("Reference (optional)", d.reference, { onChange(d.copy(reference = it)) }, singleLine = false)
+
+            MonoLabel("Recording (optional)")
+            if (editor.id == null) {
+                Text("Save first, then open it again to add a recording.", color = c.inkFaint,
+                    style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(vertical = sp.xs))
+            } else {
+                Row(Modifier.padding(vertical = sp.xs), horizontalArrangement = Arrangement.spacedBy(sp.xs)) {
+                    val ref = editor.audioRef
+                    if (ref == null) {
+                        PillChip(if (editor.audioBusy) "Adding…" else "Add recording", false, { if (!editor.audioBusy) pickAudio.launch(arrayOf("audio/*")) })
+                    } else {
+                        PillChip("▶ Play", false, { onAudioPlay(ref) })
+                        PillChip("Replace", false, { pickAudio.launch(arrayOf("audio/*")) })
+                        PillChip("Remove", false, onAudioRemove)
+                    }
+                }
+                editor.audioMessage?.let { Text(it, color = c.inkMuted, style = DhikrTheme.type.bodySmall) }
+                Text(
+                    "Use only recordings you made or have permission to use.",
+                    color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = 2.dp),
+                )
+            }
 
             Spacer(Modifier.height(sp.m))
             Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
