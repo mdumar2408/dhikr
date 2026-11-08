@@ -12,15 +12,15 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="monospace"
-        android:text="SUBHANALLAH"
+        android:text="@string/widget_preview_name"
         android:textColor="#F2F2F2"
-        android:textSize="10sp" />
+        android:textSize="11sp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="monospace"
-        android:text="12"
+        android:text="@string/widget_preview_count"
         android:textColor="#F2F2F2"
         android:textSize="34sp" />
 
@@ -28,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="monospace"
-        android:text="/ 33"
+        android:text="@string/widget_preview_target"
         android:textColor="#8A8A8A"
-        android:textSize="10sp" />
+        android:textSize="11sp" />
 </LinearLayout>

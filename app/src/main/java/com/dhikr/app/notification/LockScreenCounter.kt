@@ -238,6 +238,8 @@ class CounterActionReceiver : BroadcastReceiver() {
 /** After a reboot or an app update, starting the process is enough: the refresher re-posts. */
 class RestoreCounterReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // Exported for system broadcasts only: ignore anything else.
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED && intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
         context.applicationContext.appContainer // initialises the engine; the refresher does the rest
     }
 }

@@ -1,5 +1,14 @@
 # Development Progress
 
+## Phase 8 — QA and signed APK (in progress, 2026-11-08)
+
+- **Lint:** 0 errors. Fixed: SEGMENT_TICK guarded below API 34 (CLOCK_TICK fallback), boot receiver checks its action, widget-preview strings + 11sp, KTX `createBitmap`. Accepted: `UnusedAttribute` (API 27/28/31 attributes are ignored on older Android), `OldTargetApi` (targetSdk 36 = the Phone (2a)'s Android; raise after testing 37), newer Gradle available (wrapper stays pinned).
+- **Quick Settings tile removed** (owner request; unreachable while locked).
+- **Release build (D-046):** R8 + resource shrinking; APK 16.2 MB → 2.5 MB. `staging` build installed beside the real app and exercised on the phone: no crashes, data persists.
+- **Signing:** release key created 2026-11-08 at `%USERPROFILE%\keys\dhikr-release.jks` (PKCS12, RSA 4096, alias `dhikr`, `CN=Dhikr`, valid 10,000 days; random password in git-ignored `keystore.properties`). Cert SHA-256 `cdc9b738…aeaf3f`. `app-release.apk` (2.5 MB) builds signed and passes `apksigner verify` (v2). **Owner: back up the .jks and keystore.properties together, off this PC — losing either means no updates.**
+- **Still to check by hand:** lock-screen counter counts appear in app/widget; pinned widget mode; History, after-prayer set and lock-screen counter after the clean-up; light theme; TalkBack pass.
+- **Switching the phone from debug to release** needs an uninstall (different signing key), which wipes counts — do it deliberately.
+
 ## UI clean-up (2026-11-08)
 
 - Own line icons (D-045) in the nav bar and on the counter, history, library and lock-screen counter. Helper paragraphs cut to short hints; repeated headings removed. Build and 80 unit tests pass; checked on the phone (Today, Counter, Settings, Library).

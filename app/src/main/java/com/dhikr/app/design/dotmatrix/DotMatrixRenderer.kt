@@ -1,5 +1,6 @@
 package com.dhikr.app.design.dotmatrix
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -50,7 +51,7 @@ object DotMatrixRenderer {
             .build()
 
         val cols = ceil(textWidth / oversample.toFloat()).toInt()
-        val bmp = Bitmap.createBitmap(cols * oversample, heightPx, Bitmap.Config.ALPHA_8)
+        val bmp = createBitmap(cols * oversample, heightPx, Bitmap.Config.ALPHA_8)
         try {
             val canvas = Canvas(bmp)
             canvas.translate(0f, (heightPx - layout.height) / 2f)

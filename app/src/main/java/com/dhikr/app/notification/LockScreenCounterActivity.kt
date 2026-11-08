@@ -43,8 +43,7 @@ import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.widget.WidgetModel
 
 /**
- * Minimal counter shown **over the lock screen** (D-044). Notification buttons and Quick Settings
- * tiles ask for the PIN on Nothing OS 4.1 (D-043); an activity marked show-when-locked can be
+ * Minimal counter shown **over the lock screen** (D-044). Notification buttons ask for the PIN on Nothing OS 4.1 (D-043); an activity marked show-when-locked can be
  * opened from the notification without unlocking — the platform mechanism alarm and phone apps use.
  *
  * Deliberately limited: it shows only the current practice, dhikr and count (already public on the

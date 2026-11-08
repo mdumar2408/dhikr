@@ -87,17 +87,6 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: A
                     manager.requestPinAppWidget(ComponentName(context, DhikrWidgetReceiver::class.java), null, null)
                 })
             }
-            if (Build.VERSION.SDK_INT >= 33) {
-                PillChip("Add Quick Settings tile", false, {
-                    // System dialog — the tile is added only if the user confirms.
-                    context.getSystemService(android.app.StatusBarManager::class.java).requestAddTileService(
-                        ComponentName(context, com.dhikr.app.notification.CounterTileService::class.java),
-                        "Dhikr +1",
-                        android.graphics.drawable.Icon.createWithResource(context, com.dhikr.app.R.drawable.ic_stat_dhikr),
-                        context.mainExecutor,
-                    ) { }
-                })
-            }
         }
         Hint("Long-press the widget to change what it counts.")
 

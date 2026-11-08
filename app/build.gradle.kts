@@ -1,3 +1,5 @@
+import java.util.Properties
+
 // Module build file for the single `app` module.
 plugins {
     alias(libs.plugins.android.application)
@@ -41,13 +43,39 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing (D-046). Secrets live in keystore.properties at the repo root, which is
+    // git-ignored, as is the keystore itself. Without that file the release APK is built unsigned.
+    val keystoreProps = rootProject.file("keystore.properties")
+    if (keystoreProps.exists()) {
+        val p = Properties().apply { keystoreProps.inputStream().use { load(it) } }
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(p.getProperty("storeFile"))
+                storePassword = p.getProperty("storePassword")
+                keyAlias = p.getProperty("keyAlias")
+                keyPassword = p.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: removes unused code and resources, shortens names, optimises (D-046).
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.findByName("release")
+        }
+        // Same as release (R8 on) but signed with the debug key and installed beside the
+        // debug app (".staging"), so the shrunk build can be tested without touching real data.
+        create("staging") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".staging"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
         }
     }
 

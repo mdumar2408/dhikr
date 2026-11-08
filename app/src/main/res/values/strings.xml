@@ -2,5 +2,8 @@
     <string name="app_name">Dhikr</string>
     <string name="widget_label">Dhikr counter</string>
     <string name="widget_description">Tap to count your dhikr from the home screen</string>
-    <string name="tile_label">Dhikr +1</string>
+    <!-- Widget-picker preview sample (static picture, not translated). -->
+    <string name="widget_preview_name" translatable="false">SUBHANALLAH</string>
+    <string name="widget_preview_count" translatable="false">12</string>
+    <string name="widget_preview_target" translatable="false">/ 33</string>
 </resources>

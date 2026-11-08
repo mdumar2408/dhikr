@@ -1,5 +1,6 @@
 package com.dhikr.app.design.dotmatrix
 
+import androidx.core.graphics.createBitmap
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -19,7 +20,7 @@ object DotMatrixBitmap {
         dotRatio: Float = 2f / 3f,
     ): Bitmap {
         require(widthPx > 0 && heightPx > 0) { "bitmap size must be positive" }
-        val bmp = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+        val bmp = createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
         val g = DotGeometry.fit(grid.cols, grid.rows, widthPx.toFloat(), heightPx.toFloat(), dotRatio)
         val lit = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = litArgb }
@@ -38,7 +39,7 @@ object DotMatrixBitmap {
      */
     fun renderMask(grid: DotGrid, widthPx: Int, heightPx: Int, lit: Boolean, dotRatio: Float = 2f / 3f): Bitmap {
         require(widthPx > 0 && heightPx > 0) { "bitmap size must be positive" }
-        val bmp = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ALPHA_8)
+        val bmp = createBitmap(widthPx, heightPx, Bitmap.Config.ALPHA_8)
         val canvas = Canvas(bmp)
         val g = DotGeometry.fit(grid.cols, grid.rows, widthPx.toFloat(), heightPx.toFloat(), dotRatio)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { alpha = 255 }

@@ -115,7 +115,7 @@ private fun LibraryList(
         val toIndex = rows.indexOfFirst { it.id == to.key }
         if (fromIndex >= 0 && toIndex >= 0) {
             rows = rows.toMutableList().apply { add(toIndex, removeAt(fromIndex)) }
-            view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_TICK)
+            view.performHapticFeedback(if (android.os.Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_TICK else HapticFeedbackConstants.CLOCK_TICK)
         }
     }
 

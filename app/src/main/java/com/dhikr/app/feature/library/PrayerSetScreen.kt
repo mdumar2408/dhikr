@@ -73,7 +73,7 @@ fun PrayerSetScreen(viewModel: PrayerSetViewModel) {
         val t = rows.indexOfFirst { it.itemId == to.key }
         if (f >= 0 && t >= 0) {
             rows = rows.toMutableList().apply { add(t, removeAt(f)) }
-            view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_TICK)
+            view.performHapticFeedback(if (android.os.Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_TICK else HapticFeedbackConstants.CLOCK_TICK)
         }
     }
 
