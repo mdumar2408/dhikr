@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.dhikr.app.core.model.CountContext
 import com.dhikr.app.core.model.CountingFeel
 import com.dhikr.app.data.preferences.PreferencesRepository
+import com.dhikr.app.data.history.HistoryRepository
+import com.dhikr.app.domain.history.DaySummaryPolicy
+import com.dhikr.app.domain.history.StreakCalculator
 import com.dhikr.app.data.progress.CounterEngine
 import com.dhikr.app.data.progress.EngineState
 import com.dhikr.app.domain.flow.FlowPolicy
@@ -46,21 +49,34 @@ data class TodayUiState(
     val totalTarget: Int = 0,
     val currentArabic: String = "",
     val currentTransliteration: String = "",
+    /** Streak day (D-023/D-032) — the same rule History uses (DaySummaryPolicy). */
+    val dayComplete: Boolean = false,
+    /** Current streak in days (counts today once it's complete). */
+    val streak: Int = 0,
 ) {
     val fraction: Float get() = if (totalTarget == 0) 0f else done / totalTarget.toFloat()
     val dailyComplete: Boolean get() = totalTarget == 0 || done >= totalTarget
     val prayersComplete: Int get() = prayers.count { it.complete }
     val hasPrayerSet: Boolean get() = prayers.any { it.itemsTotal > 0 }
-
-    /** Streak day (D-023): all five prayer sets AND every daily target. */
-    val dayComplete: Boolean get() = hasPrayerSet && prayersComplete == 5 && dailyComplete
 }
 
-class TodayViewModel(private val engine: CounterEngine, prefs: PreferencesRepository) : ViewModel() {
+class TodayViewModel(
+    private val engine: CounterEngine,
+    prefs: PreferencesRepository,
+    history: HistoryRepository,
+) : ViewModel() {
 
     val uiState: StateFlow<TodayUiState> =
-        combine(engine.state, prefs.prefs) { s, p -> project(s, p.feel) }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), project(engine.state.value, prefs.prefs.value.feel))
+        combine(engine.state, prefs.prefs, history.observeSummaries()) { s, p, summaries ->
+            val completed = summaries.values.filter { it.isCompleted }.map { it.date }.toMutableSet()
+            val todayComplete = DaySummaryPolicy.summarize(s.date, s.sessions).isCompleted
+            // Use the live state for today (the saved summary may be a few ms behind).
+            if (todayComplete) completed += s.date else completed -= s.date
+            project(s, p.feel).copy(
+                dayComplete = todayComplete,
+                streak = StreakCalculator.compute(completed, s.date).current,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), project(engine.state.value, prefs.prefs.value.feel))
 
     /** Call on resume so the screen rolls over after midnight. */
     fun onResume() = engine.refreshDate()

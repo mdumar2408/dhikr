@@ -21,6 +21,7 @@ import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.feature.counter.CounterScreen
 import com.dhikr.app.feature.counter.CounterViewModel
 import com.dhikr.app.feature.history.HistoryScreen
+import com.dhikr.app.feature.history.HistoryViewModel
 import com.dhikr.app.core.model.CountContext
 import com.dhikr.app.feature.library.LibraryHost
 import com.dhikr.app.feature.library.LibraryViewModel
@@ -70,7 +71,7 @@ fun DhikrNavigation() {
             entryProvider = entryProvider {
                 entry<TodayRoute> {
                     TodayScreen(
-                        viewModel { TodayViewModel(container.engine, container.preferences) },
+                        viewModel { TodayViewModel(container.engine, container.preferences, container.history) },
                         onOpenPrayer = { ctx -> backStack.add(CounterRoute(ctx.storageKey)) },
                         onOpenDaily = { id -> backStack.add(CounterRoute(CountContext.Daily.storageKey, id)) },
                         onOpenLibrary = { backStack.selectTab(LibraryRoute) },
@@ -83,7 +84,7 @@ fun DhikrNavigation() {
                         viewModel { PrayerSetViewModel(container.dhikrRepository) },
                     )
                 }
-                entry<HistoryRoute> { HistoryScreen() }
+                entry<HistoryRoute> { HistoryScreen(viewModel { HistoryViewModel(container.history, container.engine) }) }
                 entry<SettingsRoute> {
                     SettingsScreen(
                         viewModel { SettingsViewModel(container.preferences, container.haptics) },

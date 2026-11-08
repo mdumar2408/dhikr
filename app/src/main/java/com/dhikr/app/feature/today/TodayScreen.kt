@@ -76,9 +76,16 @@ fun TodayContent(
                 Spacer(Modifier.weight(1f))
                 MonoLabel(state.dateLabel)
             }
-            if (state.loaded && state.dayComplete) {
+            if (state.loaded && (state.dayComplete || state.streak > 0)) {
                 Spacer(Modifier.height(sp.xs))
-                MonoLabel("● Day complete — all prayers and targets", color = c.ember)
+                MonoLabel(
+                    buildString {
+                        append("● ")
+                        if (state.streak > 0) append("${state.streak}-day streak")
+                        if (state.dayComplete) append(if (state.streak > 0) " · today complete" else "Day complete — all prayers and targets")
+                    },
+                    color = if (state.dayComplete) c.ember else c.inkMuted,
+                )
             }
         }
         if (!state.loaded) return@LazyColumn // a few ms on cold start; avoid flashing empty states

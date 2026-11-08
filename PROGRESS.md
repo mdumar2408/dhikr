@@ -1,5 +1,16 @@
 # Development Progress
 
+## Phase 5 — History and streaks (done 2026-11-08, checked on device)
+
+On device: completed Fajr → History shows today as partial (ring + ember outline) with streaks 0/0/0 (correct: day not complete). The day sheet shows "Prayers 1 / 5 · daily 0 / 199", Fajr in ember, and the six after-Fajr items in the order said (query orders by first count). A reinstall with `installDebug` kept the data.
+
+- **Day summaries** written by the engine for today (D-033), with the rule in D-032. Schema **v2** adds `prayers_mask` via auto-migration (D-034).
+- **StreakCalculator**: current (today counts once complete; otherwise continues from yesterday), longest, and total days. Uses pure LocalDate arithmetic (DST-safe).
+- **History**: current/longest/days in dot-matrix numerals, a month calendar (● complete, ○ partial, · nothing, ember ring = today), month navigation, and a day-detail sheet (five prayers and every count with that day's targets, including since-deleted dhikrs).
+- **Today**: "● N-day streak · today complete" line, using the same rule as History.
+- Tests: **62 unit pass** (streaks incl. gaps/DST/future dates, summary rule incl. caps/empty setups/prayer mask, engine writes summaries and undo un-completes). **On device: MigrationTest v1→v2 passes**, plus Room, ProgressDao and audio tests. BeadPadTest skipped again because the phone was locked.
+- ⚠ Instrumented test runs **uninstall the app and wipe its data** (D-035). Earlier test counts on the phone are gone.
+
 ## Phase 4 — Audio and cues (built 2026-11-08, awaiting owner listening test)
 
 - **Switch chime** (default): synthesized two-tone bell, about 260 ms; double chime when a routine or prayer set completes. Silent when the phone is on silent or vibrate (D-029/D-030).

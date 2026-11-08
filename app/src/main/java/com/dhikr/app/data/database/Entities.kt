@@ -102,6 +102,8 @@ data class DailySummaryEntity(
     @PrimaryKey @ColumnInfo(name = "local_date") val localDate: String,
     /** 0–5: prayer sessions whose whole set reached its targets. */
     @ColumnInfo(name = "prayers_completed") val prayersCompleted: Int,
+    /** Which prayers: bit i = CountContext.prayers[i] (Fajr = bit 0 … Isha = bit 4). Added in v2. */
+    @ColumnInfo(name = "prayers_mask", defaultValue = "0") val prayersMask: Int = 0,
     @ColumnInfo(name = "total_target") val totalTarget: Int,
     @ColumnInfo(name = "total_completed") val totalCompleted: Int,
     @ColumnInfo(name = "completed_dhikr_count") val completedDhikrCount: Int,

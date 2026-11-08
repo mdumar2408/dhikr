@@ -8,6 +8,8 @@ import com.dhikr.app.core.model.PrayerSetItem
 import com.dhikr.app.domain.flow.FlowEvent
 import com.dhikr.app.domain.flow.FlowPolicy
 import com.dhikr.app.domain.flow.FlowState
+import com.dhikr.app.domain.history.DaySummary
+import com.dhikr.app.domain.history.DaySummaryPolicy
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,14 +82,34 @@ class CounterEngine(
         scope.launch {
             combine(library, prayerSet) { l, p -> l to p }.collect { (l, p) ->
                 _state.update { applyRoutines(it, l, p) }
+                saveSummaryIfChanged() // e.g. a target edited or a dhikr enabled today
             }
         }
         scope.launch {
             date.flatMapLatest { d -> store.observeDate(d).map { d to it } }.collect { (d, records) ->
                 // Our own writes are already reflected in memory; only merge when nothing is in flight.
-                if (pending.get() == 0) _state.update { applyCounts(it, d, records) }
+                if (pending.get() == 0) {
+                    _state.update { applyCounts(it, d, records) }
+                    saveSummaryIfChanged() // e.g. a widget counted
+                }
             }
         }
+    }
+
+    @Volatile private var lastSaved: DaySummary? = null
+
+    /**
+     * Keeps daily_summary for *today* in step with the in-memory truth. Past days are never
+     * rewritten here (their summary was saved while they were today). Only once counts have
+     * loaded — otherwise a cold start would briefly record an empty day.
+     */
+    private fun saveSummaryIfChanged() {
+        val s = _state.value
+        if (!s.loaded) return
+        val summary = DaySummaryPolicy.summarize(s.date, s.sessions)
+        if (summary == lastSaved) return
+        lastSaved = summary
+        enqueue { store.saveSummary(summary) }
     }
 
     fun increment(context: CountContext, afterTarget: AfterTarget): FlowEvent {
@@ -98,6 +120,7 @@ class CounterEngine(
             val (session, event) = FlowPolicy.increment(old.session(context), mode)
             if (_state.compareAndSet(old, old.copy(sessions = old.sessions + (context to session)))) {
                 countedDhikr(event)?.let { d -> enqueue { store.increment(d.id, old.date, context, d.target) } }
+                saveSummaryIfChanged()
                 return event
             }
         }
@@ -111,6 +134,7 @@ class CounterEngine(
             val session = FlowPolicy.undo(old.session(context))
             if (_state.compareAndSet(old, old.copy(sessions = old.sessions + (context to session)))) {
                 enqueue { store.decrement(last, old.date, context) }
+                saveSummaryIfChanged()
                 return
             }
         }
@@ -126,6 +150,7 @@ class CounterEngine(
             val session = FlowPolicy.reset(old.session(context), current.id)
             if (_state.compareAndSet(old, old.copy(sessions = old.sessions + (context to session)))) {
                 enqueue { store.reset(current.id, old.date, context) }
+                saveSummaryIfChanged()
                 return
             }
         }

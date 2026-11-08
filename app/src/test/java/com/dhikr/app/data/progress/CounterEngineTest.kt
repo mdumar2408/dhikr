@@ -5,6 +5,7 @@ import com.dhikr.app.core.model.CountContext
 import com.dhikr.app.core.model.Dhikr
 import com.dhikr.app.core.model.PrayerSetItem
 import com.dhikr.app.domain.flow.FlowEvent
+import com.dhikr.app.domain.history.DaySummary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -40,6 +41,10 @@ private class FakeStore : ProgressStore {
     override suspend fun reset(dhikrId: Long, date: LocalDate, context: CountContext) {
         val k = Triple(dhikrId, date, context)
         rows.value[k]?.let { (_, t) -> rows.value = rows.value + (k to (0 to t)) }
+    }
+    val summaries = mutableMapOf<LocalDate, DaySummary>()
+    override suspend fun saveSummary(summary: DaySummary) {
+        summaries[summary.date] = summary
     }
 }
 
@@ -148,6 +153,24 @@ class CounterEngineTest {
         assertEquals(1, e.state.value.session(CountContext.Daily).countOf(1))
         assertEquals(4, store.rows.value[Triple(1L, LocalDate.parse("2026-11-08"), CountContext.Daily)]?.first)
         assertEquals(1, store.rows.value[Triple(1L, LocalDate.parse("2026-11-09"), CountContext.Daily)]?.first)
+    }
+
+    @Test
+    fun `the day summary is saved and becomes complete only with all prayers and daily targets`() = runTest {
+        val store = FakeStore()
+        val e = engine(store)
+        advanceUntilIdle()
+        val date = LocalDate.parse("2026-11-08")
+        CountContext.prayers.forEach { p -> repeat(5) { e.increment(p, AfterTarget.NextDhikr) } } // 3 + 2 each
+        advanceUntilIdle()
+        assertEquals(0b11111, store.summaries[date]?.prayersMask)
+        assertEquals(false, store.summaries[date]?.isCompleted) // daily targets not done yet
+        repeat(133) { e.increment(CountContext.Daily, AfterTarget.NextDhikr) } // 100 + 33
+        advanceUntilIdle()
+        assertEquals(true, store.summaries[date]?.isCompleted)
+        e.undo(CountContext.Daily)
+        advanceUntilIdle()
+        assertEquals(false, store.summaries[date]?.isCompleted) // undo un-completes the day
     }
 
     @Test

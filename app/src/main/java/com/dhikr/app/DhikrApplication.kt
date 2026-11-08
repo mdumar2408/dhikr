@@ -6,6 +6,7 @@ import android.util.Log
 import com.dhikr.app.audio.AudioCuePlayer
 import com.dhikr.app.audio.AudioStore
 import com.dhikr.app.data.database.DhikrDatabase
+import com.dhikr.app.data.history.HistoryRepository
 import com.dhikr.app.data.progress.CounterEngine
 import com.dhikr.app.data.progress.RoomProgressStore
 import com.dhikr.app.data.preferences.PreferencesRepository
@@ -34,6 +35,7 @@ class AppContainer(context: Context) {
     val dhikrRepository: DhikrRepository by lazy { DhikrRepository(database.dhikrDao(), database.prayerSetDao(), clock) }
     val preferences: PreferencesRepository = PreferencesRepository.create(context, appScope)
     val haptics = HapticPlayer(context)
+    val history: HistoryRepository by lazy { HistoryRepository(database.summaryDao()) }
     val audioStore = AudioStore(context.filesDir, context.contentResolver)
     val audio: AudioCuePlayer by lazy { AudioCuePlayer(context, audioStore) }
 
@@ -42,7 +44,7 @@ class AppContainer(context: Context) {
         CounterEngine(
             library = dhikrRepository.observeLibrary(),
             prayerSet = dhikrRepository.observePrayerSet(),
-            store = RoomProgressStore(database.progressDao(), clock),
+            store = RoomProgressStore(database.progressDao(), database.summaryDao(), clock),
             clock = clock,
             scope = appScope,
         )
