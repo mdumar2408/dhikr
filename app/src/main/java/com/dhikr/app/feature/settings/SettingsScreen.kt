@@ -99,6 +99,7 @@ private fun tapLabel(h: TapHaptic) = when (h) {
 }
 
 private fun targetLabel(h: TargetHaptic) = when (h) {
+    TargetHaptic.DoubleBuzz -> "Double buzz"
     TargetHaptic.Confirm -> "Confirm"
     TargetHaptic.Thud -> "Thud"
     TargetHaptic.ThreeBeads -> "Three beads"

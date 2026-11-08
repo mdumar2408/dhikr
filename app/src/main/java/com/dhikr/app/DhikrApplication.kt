@@ -2,23 +2,53 @@ package com.dhikr.app
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import com.dhikr.app.data.CounterStore
-import com.dhikr.app.data.PreferencesStore
-import com.dhikr.app.data.sample.SampleLibrary
+import com.dhikr.app.data.database.DhikrDatabase
+import com.dhikr.app.data.preferences.PreferencesRepository
+import com.dhikr.app.data.repository.DhikrRepository
 import com.dhikr.app.haptics.HapticPlayer
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.time.Clock
 
 /**
- * Manual dependency container (D-008: no DI framework yet). One instance per process,
- * so the app, and later widgets and notification receivers, share the same state.
+ * Manual dependency container (D-008: no DI framework). One instance per process, so the app,
+ * and later widgets and notification receivers, share the same database, DataStore and state.
  */
 class AppContainer(context: Context) {
-    val counterStore = CounterStore(SampleLibrary.dhikrs)
-    val preferencesStore = PreferencesStore()
+    /** Process-lifetime scope for repositories (not tied to any screen). Never GlobalScope. */
+    val appScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default +
+            CoroutineExceptionHandler { _, e -> Log.e("Dhikr", "Background work failed", e) },
+    )
+    val clock: Clock = Clock.systemDefaultZone()
+
+    val database: DhikrDatabase by lazy { DhikrDatabase.build(context) }
+    val dhikrRepository: DhikrRepository by lazy { DhikrRepository(database.dhikrDao(), database.prayerSetDao(), clock) }
+    val preferences: PreferencesRepository = PreferencesRepository.create(context, appScope)
+    val counterStore = CounterStore()
     val haptics = HapticPlayer(context)
+
+    init {
+        appScope.launch {
+            dhikrRepository.ensureSeeded()
+            // The counter always sees the live, persisted library.
+            dhikrRepository.observeLibrary().collect(counterStore::setLibrary)
+        }
+    }
 }
 
 class DhikrApplication : Application() {
     val container: AppContainer by lazy { AppContainer(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        container // start seeding / loading early
+    }
 }
 
 val Context.appContainer: AppContainer

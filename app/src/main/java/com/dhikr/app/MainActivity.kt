@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val prefsStore = appContainer.preferencesStore
+        val prefsStore = appContainer.preferences
         setContent {
             val prefs by prefsStore.prefs.collectAsStateWithLifecycle()
             DhikrTheme(prefs.themeMode) {

@@ -6,7 +6,7 @@ import com.dhikr.app.core.model.AfterTarget
 import com.dhikr.app.core.model.CountingFeel
 import com.dhikr.app.core.model.Dhikr
 import com.dhikr.app.data.CounterStore
-import com.dhikr.app.data.PreferencesStore
+import com.dhikr.app.data.preferences.PreferencesRepository
 import com.dhikr.app.design.components.RoutineDotState
 import com.dhikr.app.domain.flow.FlowEvent
 import com.dhikr.app.domain.flow.FlowPolicy
@@ -45,7 +45,7 @@ data class CounterUiState(
 
 class CounterViewModel(
     private val store: CounterStore,
-    private val prefs: PreferencesStore,
+    private val prefs: PreferencesRepository,
     startDhikrId: Long?,
 ) : ViewModel() {
 

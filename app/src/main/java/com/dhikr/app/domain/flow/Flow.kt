@@ -17,6 +17,8 @@ data class FlowState(
     val history: List<Long> = emptyList(),
     /** Dhikr the user picked by hand; overrides auto-selection until its goal is met (or always, in Stay mode). */
     val manualId: Long? = null,
+    /** False until the library has been read from storage once (avoids an "empty" flash). */
+    val loaded: Boolean = false,
 ) {
     fun countOf(id: Long): Int = counts[id] ?: 0
 }
@@ -107,6 +109,13 @@ object FlowPolicy {
 
     fun select(state: FlowState, id: Long): FlowState =
         if (state.library.any { it.id == id }) state.copy(manualId = id) else state
+
+    /** Replaces the library (from storage). Counts are kept; a manual pick that vanished is cleared. */
+    fun withLibrary(state: FlowState, library: List<Dhikr>): FlowState = state.copy(
+        library = library,
+        manualId = state.manualId?.takeIf { id -> library.any { it.id == id && it.isEnabled } },
+        loaded = true,
+    )
 
     fun setEnabled(state: FlowState, id: Long, enabled: Boolean): FlowState = state.copy(
         library = state.library.map { if (it.id == id) it.copy(isEnabled = enabled) else it },

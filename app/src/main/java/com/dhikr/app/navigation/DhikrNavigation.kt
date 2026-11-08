@@ -65,24 +65,24 @@ fun DhikrNavigation() {
             entryProvider = entryProvider {
                 entry<TodayRoute> {
                     TodayScreen(
-                        viewModel { TodayViewModel(container.counterStore, container.preferencesStore) },
+                        viewModel { TodayViewModel(container.counterStore, container.preferences) },
                         onOpenCounter = { id -> backStack.add(CounterRoute(id)) },
                         onOpenLibrary = { backStack.selectTab(LibraryRoute) },
                     )
                 }
                 entry<LibraryRoute> {
-                    LibraryScreen(viewModel { LibraryViewModel(container.counterStore) })
+                    LibraryScreen(viewModel { LibraryViewModel(container.dhikrRepository) })
                 }
                 entry<HistoryRoute> { HistoryScreen() }
                 entry<SettingsRoute> {
                     SettingsScreen(
-                        viewModel { SettingsViewModel(container.preferencesStore, container.haptics) },
+                        viewModel { SettingsViewModel(container.preferences, container.haptics) },
                         container.haptics,
                     )
                 }
                 entry<CounterRoute> { key ->
                     CounterScreen(
-                        viewModel { CounterViewModel(container.counterStore, container.preferencesStore, key.dhikrId) },
+                        viewModel { CounterViewModel(container.counterStore, container.preferences, key.dhikrId) },
                         container.haptics,
                         onBack = { backStack.removeLastOrNull() },
                     )

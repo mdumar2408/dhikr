@@ -52,6 +52,7 @@ fun TodayContent(state: TodayUiState, onOpenCounter: (Long?) -> Unit, onOpenLibr
                 MonoLabel(state.dateLabel)
             }
         }
+        if (!state.loaded) return@LazyColumn // a few ms on cold start; avoid flashing the empty state
         if (state.rows.isEmpty()) {
             item { EmptyToday(onOpenLibrary) }
             return@LazyColumn

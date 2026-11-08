@@ -272,3 +272,71 @@ Settings shows a small live preview pad, so each option can be felt before choos
 - **Midnight** during Flow: the next tap belongs to the new day, so Flow restarts at the first Dhikr, round 1.
 - **Only one Dhikr enabled**: reaching the target shows "Day complete", then loops on the same Dhikr in rounds.
 - **Rapid tapping across the boundary**: taps 33 and 34 arriving within ~50 ms must land on Dhikr A (33) and Dhikr B (1). The decision is made in the counter engine, serialised, never in the UI.
+
+## 14. Two practices — prayer tasbeeh and daily targets (owner request, 2026-11-08)
+
+A Muslim prays five times a day and does tasbeeh after each prayer, and may also keep personal dhikr goals outside the prayers. Dhikr models these as **two practices**, and they are counted separately (D-022).
+
+### 14.1 Prayer tasbeeh
+
+- **Five sessions per day:** Fajr, Dhuhr, Asr, Maghrib, Isha.
+- Each session runs the **after-prayer set**: an ordered list with its own per-prayer counts, independent of each dhikr's daily target. Default set (seeded once, then fully editable):
+
+| # | Dhikr | Count | Source (verified on sunnah.com) |
+|---|---|---:|---|
+| 1 | أَسْتَغْفِرُ ٱللَّٰهَ — Astaghfirullah | 3 | Sahih Muslim 591 |
+| 2 | ٱللَّٰهُمَّ أَنْتَ ٱلسَّلَامُ وَمِنْكَ ٱلسَّلَامُ، تَبَارَكْتَ ذَا ٱلْجَلَالِ وَٱلْإِكْرَامِ | 1 | Sahih Muslim 591 |
+| 3 | سُبْحَانَ ٱللَّٰهِ — SubhanAllah | 33 | Sahih Muslim 597a |
+| 4 | ٱلْحَمْدُ لِلَّٰهِ — Alhamdulillah | 33 | Sahih Muslim 597a |
+| 5 | ٱللَّٰهُ أَكْبَرُ — Allahu Akbar | 33 (34 in Muslim 596a) | Sahih Muslim 597a / 596a |
+| 6 | لَا إِلَٰهَ إِلَّا ٱللَّٰهُ وَحْدَهُ لَا شَرِيكَ لَهُ … قَدِيرٌ | 1 (completes 100) | Sahih Muslim 597a |
+
+  These are sunnah (recommended) adhkar. The app frames them as the user's chosen routine, never as an obligation. The user can add items (for example Ayat al-Kursi) or change counts. The app doesn't add unverified items itself.
+- **Counting** uses Flow (§13) through the set: the target cue fires, the NEXT card shows the next item, and the last item ends the session with a **"Fajr complete"** state. There are no rounds in prayer mode. Extra taps after the set is complete count as extra on the last item.
+- **Which prayer?** V1 has no prayer-time calculation, so no location permission is needed. The Prayer screen shows five slots, and the **suggested** slot is the first incomplete one in order. The user can tap any slot (missed prayers are made up in any order). Prayer-time awareness, which would suggest "Asr" after Asr time from an offline calculation and a city the user picks manually, is a later option (D-025).
+- Day boundary: the device's local midnight, the same as everywhere else. An Islamic day starting at Maghrib is deliberately not used in V1 (D-025).
+
+### 14.2 Daily targets
+
+- The user's own dhikr goals outside the prayers: the **routine of enabled library dhikrs** with their daily targets. This is the existing Flow with rounds (§13).
+- Counts here are separate from prayer counts. Astaghfirullah ×3 after Fajr doesn't count toward an Astaghfirullah ×100 daily goal.
+
+### 14.3 Streak (replaces the earlier rule in §5E / dhikr-domain skill rule 4)
+
+A day **counts toward the streak** only if:
+1. **all five** prayer sessions are complete (every item in the set reached its count), **and**
+2. **every enabled daily target** is complete. If no daily targets are enabled, only condition 1 applies, so the prayer tasbeeh alone keeps a streak.
+
+`daily_summary.prayers_completed` (0–5) and `is_completed` store this per date, with target snapshots, so changing the set or targets later never rewrites history.
+
+### 14.4 Home: choose what to complete
+
+Opening the app lands on **Today**, which is now a chooser with two large, thumb-reachable cards:
+
+```
+┌──────────────────────────────┐
+│ TODAY            SUN 8 NOV   │
+│ ● 12-day streak              │
+│ ┌──────────────────────────┐ │
+│ │ PRAYER TASBEEH           │ │   five prayer dots:  ● ● ◉ ○ ○
+│ │ Fajr ● Dhuhr ● Asr ◉ …   │ │   tap → Prayer counter on the
+│ │ Next: ASR  ›             │ │   suggested prayer (any dot = that prayer)
+│ └──────────────────────────┘ │
+│ ┌──────────────────────────┐ │
+│ │ DAILY TARGETS            │ │   33-dot ring  175 / 350
+│ │ ◌ 175 / 350   Continue › │ │   tap → Daily Flow counter
+│ └──────────────────────────┘ │
+│ (per-dhikr rows below)       │
+└──────────────────────────────┘
+```
+
+- When everything is done: both cards show complete, with the streak in ember.
+- An optional setting ("Open straight to the counter") skips Today and resumes the last practice.
+
+### 14.5 Making the switch noticeable (on-device feedback)
+
+When Flow moves to the next dhikr, the user must notice it **without looking**:
+- **Vibration**: the new default target cue is **Double buzz** (two 45 ms pulses, 90 ms apart). It's clearly distinct from the per-count Clock tick on the Phone (2a)'s motor, which has no amplitude control (D-024). The other options remain in Settings.
+- **Sound** (Phase 4): an optional short chime, or the next dhikr's own audio as a spoken cue. It follows the ringer mode, so it's silent when the phone is on silent or vibrate.
+- **Glyph** (Phase 7): a full flash of the C bar on each switch, when the counter is in the foreground.
+- **Visual**: the NEXT card (already built) plus an ember pulse of the routine dots.

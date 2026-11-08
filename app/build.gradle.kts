@@ -3,6 +3,14 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room3)
+}
+
+// Room writes the schema JSON for every DB version here. It's committed to git and
+// used by migration tests (offline-first-android skill).
+room3 {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
@@ -63,6 +71,15 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
+    // Declared explicitly (not only transitively) so the app and coroutines-test use the same version.
+    implementation(libs.kotlinx.coroutines.android)
+
+    implementation(libs.androidx.room3.runtime)
+    ksp(libs.androidx.room3.compiler)
+    implementation(libs.androidx.sqlite.framework)
+    implementation(libs.androidx.datastore)
+    implementation(libs.reorderable)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -72,4 +89,11 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.room3.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

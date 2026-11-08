@@ -3,7 +3,7 @@ package com.dhikr.app.feature.today
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dhikr.app.data.CounterStore
-import com.dhikr.app.data.PreferencesStore
+import com.dhikr.app.data.preferences.PreferencesRepository
 import com.dhikr.app.domain.flow.FlowPolicy
 import com.dhikr.app.domain.flow.FlowState
 import com.dhikr.app.core.model.CountingFeel
@@ -27,6 +27,8 @@ data class TodayRow(
 }
 
 data class TodayUiState(
+    /** False until the library has loaded from the database — don't show the empty state yet. */
+    val loaded: Boolean = false,
     val dateLabel: String = "",
     val rows: List<TodayRow> = emptyList(),
     /** Sum of per-dhikr progress, each capped at its target (one dhikr can't make up for another). */
@@ -40,7 +42,7 @@ data class TodayUiState(
     val dayComplete: Boolean get() = totalTarget > 0 && done >= totalTarget
 }
 
-class TodayViewModel(store: CounterStore, prefs: PreferencesStore) : ViewModel() {
+class TodayViewModel(store: CounterStore, prefs: PreferencesRepository) : ViewModel() {
 
     val uiState: StateFlow<TodayUiState> =
         combine(store.state, prefs.prefs) { s, p -> project(s, p.feel) }
@@ -50,6 +52,7 @@ class TodayViewModel(store: CounterStore, prefs: PreferencesStore) : ViewModel()
         val routine = FlowPolicy.routine(s.library)
         val current = FlowPolicy.current(s, feel.afterTarget)
         return TodayUiState(
+            loaded = s.loaded,
             dateLabel = LocalDate.now().format(DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)).uppercase(),
             rows = routine.map {
                 TodayRow(it.id, it.arabic, it.transliteration, s.countOf(it.id), it.target, it.id == current?.id)

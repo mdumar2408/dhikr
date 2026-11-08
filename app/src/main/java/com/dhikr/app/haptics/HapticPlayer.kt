@@ -39,7 +39,7 @@ class HapticPlayer(context: Context) {
     }
     val availableTargetHaptics: List<TargetHaptic> = TargetHaptic.entries.filter { h ->
         when (h) {
-            TargetHaptic.Thud, TargetHaptic.ThreeBeads -> vibrator != null
+            TargetHaptic.DoubleBuzz, TargetHaptic.Thud, TargetHaptic.ThreeBeads -> vibrator != null
             else -> true
         }
     }
@@ -75,6 +75,8 @@ class HapticPlayer(context: Context) {
 
     fun play(view: View, h: TargetHaptic) {
         when (h) {
+            // Long enough to feel unmistakably different from the per-count tick, even mid-tapping.
+            TargetHaptic.DoubleBuzz -> waveform(longArrayOf(0, 45, 90, 45))
             TargetHaptic.Confirm ->
                 if (Build.VERSION.SDK_INT >= 30) {
                     view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)

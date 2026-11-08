@@ -1,5 +1,23 @@
 # Development Progress
 
+## Phase 2 — Persistence and Dhikr library (done 2026-11-08, awaiting owner review)
+
+- **Room 3** (D-020) schema v1: `dhikr` (soft delete, `seed_key`, `sort_order`, `search_key`), `daily_progress` keyed by **(dhikr, date, context)**, `prayer_set_item`, `daily_summary` (with `prayers_completed`). Schema JSON is in `app/schemas/`.
+- **Verified seed library**: 10 entries, every reference checked on sunnah.com (`docs/SEED_LIBRARY.md`), plus the default **after-prayer set** (istighfar ×3, *Allahumma antas-salam*, 33/33/33, tahlil ×1).
+- **Preferences** persisted with a JSON-typed DataStore (D-019).
+- **Library**: search (Arabic diacritics-insensitive), enable/disable, add/edit sheet (only Arabic or transliteration required), delete with confirmation plus undo (soft delete), drag-to-reorder (D-021).
+- Owner feedback folded in: **prayer tasbeeh + daily targets** model and the **new streak rule** (DESIGN_SPEC §14, D-022/D-023/D-025). **Double buzz** is now the default target cue (D-024).
+- Tests: **33 unit tests pass** (ArabicText, DhikrDraft, SeedLibrary, preferences serializer, dot matrix, Flow). **7 instrumented Room tests pass on the Phone (2a)** (seeding, prayer set, soft delete/restore, no resurrection, add/edit, reorder, toggle).
+- On device: seeded library shown. Toggle + add survive a force-stop.
+- Not yet verified on the device by hand: drag-reorder gesture, delete → undo snackbar, search typing (covered by repository tests and VM logic, not by UI tests).
+- **Still in memory: counts** (and Flow position). Persisting counts per context is the Phase 3 engine.
+
+### Updated roadmap (owner request §14)
+- **Phase 3 — Counter engine + practices:** persist counts per context (transactional, atomic), prayer-session Flow (Fajr…Isha) and daily-target Flow on the same engine, Today as a chooser (Prayer tasbeeh / Daily targets), prayer-set editor, hold-to-reset, undo persisted, Compose UI tests.
+- **Phase 4 — Audio and cues:** optional switch chime / spoken next-dhikr, audio per dhikr.
+- **Phase 5 — History and streaks:** daily summaries with the new streak rule (5 prayers + daily targets), calendar.
+- Phases 6–8 unchanged (widgets, Nothing integrations, release).
+
 ## Tooling: Claude Code skills (2026-11-08)
 
 - 16 vendored skills + 5 project skills in `.claude/skills/`; `CLAUDE.md` created. Report: `docs/SKILLS_SETUP_REPORT.md`
