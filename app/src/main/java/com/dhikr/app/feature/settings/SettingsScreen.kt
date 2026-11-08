@@ -45,6 +45,15 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import androidx.compose.ui.platform.LocalContext
 import com.dhikr.app.widget.DhikrWidgetReceiver
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import com.dhikr.app.core.model.LockScreenMode
+import com.dhikr.app.notification.LockScreenCounter
 import com.dhikr.app.audio.AudioCuePlayer
 import com.dhikr.app.audio.Cue
 import com.dhikr.app.core.model.SwitchSound
@@ -68,20 +77,36 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: A
         Section("Theme")
         Options(ThemeMode.entries, prefs.themeMode, { it.name }, viewModel::setTheme)
 
-        Section("Home screen")
+        Section("Shortcuts")
         val context = LocalContext.current
         val manager = remember { AppWidgetManager.getInstance(context) }
-        if (manager.isRequestPinAppWidgetSupported) {
-            Row(Modifier.padding(top = sp.xs)) {
-                PillChip("Add widget to home screen", false, {
+        Row(Modifier.padding(top = sp.xs), horizontalArrangement = Arrangement.spacedBy(sp.xs)) {
+            if (manager.isRequestPinAppWidgetSupported) {
+                PillChip("Add widget", false, {
                     // The launcher shows its own confirmation; nothing is added without the user's OK.
                     manager.requestPinAppWidget(ComponentName(context, DhikrWidgetReceiver::class.java), null, null)
                 })
             }
+            if (Build.VERSION.SDK_INT >= 33) {
+                PillChip("Add Quick Settings tile", false, {
+                    // System dialog — the tile is added only if the user confirms.
+                    context.getSystemService(android.app.StatusBarManager::class.java).requestAddTileService(
+                        ComponentName(context, com.dhikr.app.notification.CounterTileService::class.java),
+                        "Dhikr +1",
+                        android.graphics.drawable.Icon.createWithResource(context, com.dhikr.app.R.drawable.ic_stat_dhikr),
+                        context.mainExecutor,
+                    ) { }
+                })
+            }
         }
-        Text(
-            "Tap the widget to count. Long-press it → reconfigure to pin one dhikr instead of following Flow.",
-            color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
+        Hint("Long-press the widget to change what it counts.")
+
+        Section("Lock screen")
+        LockScreenSection(
+            enabled = prefs.lockScreen.enabled,
+            mode = prefs.lockScreen.mode,
+            onEnabled = viewModel::setLockScreenEnabled,
+            onMode = viewModel::setLockScreenMode,
         )
 
         Section("Counting feel")
@@ -92,12 +117,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: A
         Options(BeadStyle.entries, feel.beadStyle, { it.name }, viewModel::setBeadStyle)
         Label("Spring")
         Options(SpringFeel.entries, feel.spring, { it.name }, viewModel::setSpring)
-        Label("Haptic on each count")
+        Label("Tap haptic")
         Options(viewModel.tapOptions, feel.tapHaptic, ::tapLabel) {
             viewModel.setTapHaptic(it)
             haptics.play(view, it)
         }
-        Label("Haptic when a target is reached")
+        Label("Target haptic")
         Options(viewModel.targetOptions, feel.targetHaptic, ::targetLabel) {
             viewModel.setTargetHaptic(it)
             haptics.play(view, it)
@@ -106,12 +131,12 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: A
         Section("After a target")
         Options(
             AfterTarget.entries, feel.afterTarget,
-            { if (it == AfterTarget.NextDhikr) "Move to next dhikr" else "Stay on this dhikr" },
+            { if (it == AfterTarget.NextDhikr) "Next dhikr" else "Stay" },
             viewModel::setAfterTarget,
         )
 
         Section("Sound")
-        Label("When moving to the next dhikr")
+        Label("On next dhikr")
         Options(
             SwitchSound.entries, prefs.sound.switchSound,
             {
@@ -125,18 +150,77 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: A
             viewModel.setSwitchSound(it)
             if (it != SwitchSound.Off) audio.play(Cue.Chime()) // preview
         }
-        Text(
-            "The chime is silent when your phone is on silent or vibrate. \"Recite next\" plays the next dhikr's own recording, or the chime if it has none.",
-            color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
-        )
+        Hint("Muted when the phone is on silent.")
         Label("Recite while counting")
         Options(listOf(false, true), prefs.sound.reciteWhileCounting, { if (it) "On" else "Off" }, viewModel::setReciteWhileCounting)
-        Text(
-            "Plays a dhikr's recording as you count, never overlapping itself. Add recordings when editing a dhikr in Library.",
-            color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
-        )
+        Hint("Add recordings by editing a dhikr in Library.")
         Spacer(Modifier.height(sp.xxl))
     }
+}
+
+/**
+ * Lock-screen counting (D-041). Turning it on asks for the notification permission (Android 13+)
+ * at that moment — never at first launch. If it was refused, explain and offer the system page.
+ */
+@Composable
+private fun LockScreenSection(
+    enabled: Boolean,
+    mode: LockScreenMode,
+    onEnabled: (Boolean) -> Unit,
+    onMode: (LockScreenMode) -> Unit,
+) {
+    val c = DhikrTheme.colors
+    val sp = DhikrTheme.spacing
+    val context = LocalContext.current
+    var denied by remember { mutableStateOf(false) }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        denied = !granted
+        if (granted) onEnabled(true)
+    }
+    Label("Lock-screen counter")
+    Options(listOf(false, true), enabled && LockScreenCounter.canPost(context), { if (it) "On" else "Off" }) { on ->
+        when {
+            !on -> onEnabled(false)
+            Build.VERSION.SDK_INT >= 33 && !LockScreenCounter.canPost(context) ->
+                askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            else -> onEnabled(true)
+        }
+    }
+    if (denied) {
+        Text("Notifications are off for Dhikr.",
+            color = c.ember, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs))
+        Row(Modifier.padding(top = sp.xs)) {
+            PillChip("Open notification settings", false, {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+                )
+            })
+        }
+    }
+    if (enabled && LockScreenCounter.systemShowsLockScreenNotifications(context) == false) {
+        // The phone hides every notification on the lock screen — the user's own choice; explain, don't change it.
+        Text(
+            "Your phone hides lock-screen notifications.",
+            color = c.ember, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
+        )
+        Row(Modifier.padding(top = sp.xs)) {
+            PillChip("Open phone settings", false, {
+                context.startActivity(Intent(Settings.ACTION_SETTINGS))
+            })
+        }
+    }
+    Label("Counts toward")
+    Options(
+        LockScreenMode.entries, mode,
+        { if (it == LockScreenMode.Prayer) "Prayer tasbeeh" else "Daily targets" },
+        onMode,
+    )
+    Hint("Tap the notification to count without unlocking. The dhikr name and count are visible on the lock screen.")
+}
+
+@Composable
+private fun Hint(text: String) {
+    Text(text, color = DhikrTheme.colors.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = DhikrTheme.spacing.xs))
 }
 
 private fun tapLabel(h: TapHaptic) = when (h) {
@@ -204,7 +288,7 @@ private fun PreviewPad(style: BeadStyle, springFeel: SpringFeel, onHaptic: (reac
                 style, p.value, PREVIEW_TARGET, complete = count > 0 && count % PREVIEW_TARGET == 0,
                 modifier = Modifier.fillMaxWidth().height(if (style == BeadStyle.Ring) 170.dp else 56.dp),
             )
-            MonoLabel("Tap to preview · target every $PREVIEW_TARGET", color = DhikrTheme.colors.inkFaint)
+            MonoLabel("Tap to preview", color = DhikrTheme.colors.inkFaint)
         }
     }
 }

@@ -104,7 +104,7 @@ fun DhikrEditorSheet(
 
             MonoLabel("Recording (optional)")
             if (editor.id == null) {
-                Text("Save first, then open it again to add a recording.", color = c.inkFaint,
+                Text("Save first to add a recording.", color = c.inkFaint,
                     style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(vertical = sp.xs))
             } else {
                 Row(Modifier.padding(vertical = sp.xs), horizontalArrangement = Arrangement.spacedBy(sp.xs)) {
@@ -145,7 +145,7 @@ fun DhikrEditorSheet(
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("Remove $name?") },
-            text = { Text("It leaves your library and routine. Past counts are kept, and you can undo right after.") },
+            text = { Text("Past counts are kept.") },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete(editor.id, name) }) { Text("Remove", color = c.ember) }
             },

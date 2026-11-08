@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.navigation.DhikrNavigation
+import com.dhikr.app.notification.LockScreenCounter
 
 /**
  * Single activity. The UI is Compose; screens are Navigation 3 entries (see DhikrNavigation).
@@ -29,6 +30,16 @@ class MainActivity : ComponentActivity() {
                 SystemBars(DhikrTheme.colors.isDark)
                 DhikrNavigation()
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Opening the app brings back a lock-screen counter the user swiped away (Android 14+ allows that).
+        if (LockScreenCounter.dismissed) {
+            LockScreenCounter.dismissed = false
+            val c = appContainer
+            LockScreenCounter.refresh(this, c.engine.state.value, c.preferences.prefs.value)
         }
     }
 

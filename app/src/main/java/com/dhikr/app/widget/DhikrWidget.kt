@@ -103,10 +103,7 @@ class DhikrWidgetReceiver : GlanceAppWidgetReceiver() {
         MidnightRefresh.schedule(context)
     }
 
-    override fun onDisabled(context: Context) {
-        super.onDisabled(context)
-        MidnightRefresh.cancel(context)
-    }
+    // No cancel in onDisabled: the midnight job also serves the lock-screen counter (scheduled at app start).
 }
 
 // ---- Rendering ---------------------------------------------------------------------------------

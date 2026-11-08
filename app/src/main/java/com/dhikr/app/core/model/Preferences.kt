@@ -51,9 +51,20 @@ data class SoundSettings(
     val reciteWhileCounting: Boolean = false,
 )
 
+/** What the lock-screen counter counts (same meanings as the widget's modes, D-040). */
+@Serializable enum class LockScreenMode { Prayer, Daily }
+
+/** Lock-screen counting via an ongoing notification (D-203, Phase 7). Off until the user opts in. */
+@Serializable
+data class LockScreenSettings(
+    val enabled: Boolean = false,
+    val mode: LockScreenMode = LockScreenMode.Prayer,
+)
+
 @Serializable
 data class UserPreferences(
     val themeMode: ThemeMode = ThemeMode.System,
     val feel: CountingFeel = CountingFeel(),
     val sound: SoundSettings = SoundSettings(),
+    val lockScreen: LockScreenSettings = LockScreenSettings(),
 )

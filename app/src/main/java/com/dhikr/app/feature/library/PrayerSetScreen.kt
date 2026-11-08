@@ -1,5 +1,7 @@
 package com.dhikr.app.feature.library
 
+import com.dhikr.app.design.components.DhikrIcons
+import com.dhikr.app.design.components.DhikrIcon
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -77,17 +80,14 @@ fun PrayerSetScreen(viewModel: PrayerSetViewModel) {
     Box(Modifier.fillMaxSize()) {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().background(c.canvas).padding(horizontal = sp.gutter)) {
             item(key = "intro") {
-                Text(
-                    "Said after each of the five prayers, in this order. The count here is per prayer and separate from your daily targets.",
-                    color = c.inkMuted, style = DhikrTheme.type.bodySmall,
-                )
+                Text("Said after each prayer, in this order.", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
                 Spacer(Modifier.height(sp.xs))
                 MonoLabel("Total per prayer · ${rows.sumOf { it.target }}", color = c.inkFaint)
                 Spacer(Modifier.height(sp.s))
             }
             if (state.loaded && rows.isEmpty()) {
                 item(key = "empty") {
-                    Text("Your after-prayer set is empty. Add dhikr from your library.",
+                    Text("Nothing here yet",
                         color = c.inkMuted, style = DhikrTheme.type.body, modifier = Modifier.padding(vertical = sp.l))
                 }
             }
@@ -104,7 +104,7 @@ fun PrayerSetScreen(viewModel: PrayerSetViewModel) {
                                     )
                                     .semantics { contentDescription = "Reorder ${item.dhikr.displayName}" },
                                 contentAlignment = Alignment.Center,
-                            ) { Text("≡", color = c.inkFaint, style = DhikrTheme.type.title) }
+                            ) { DhikrIcon(DhikrIcons.Drag, null, tint = c.inkFaint) }
                             Column(Modifier.weight(1f)) {
                                 Text(item.dhikr.displayName, color = c.ink, style = DhikrTheme.type.body,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -135,8 +135,14 @@ fun PrayerSetScreen(viewModel: PrayerSetViewModel) {
             Modifier.align(Alignment.BottomEnd).padding(sp.l)
                 .clip(RoundedCornerShape(50)).background(c.ink)
                 .clickable(onClick = viewModel::onPick)
-                .padding(horizontal = 22.dp, vertical = 14.dp),
-        ) { Text("+ Add to set", color = c.canvas, style = DhikrTheme.type.bodySmall) }
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                DhikrIcon(DhikrIcons.Add, null, tint = c.canvas, size = 18.dp)
+                Spacer(Modifier.width(8.dp))
+                Text("Add to set", color = c.canvas, style = DhikrTheme.type.bodySmall)
+            }
+        }
     }
 
     if (state.picking) PickSheet(state, viewModel)
@@ -155,7 +161,7 @@ private fun PickSheet(state: PrayerSetUiState, viewModel: PrayerSetViewModel) {
         LazyColumn(Modifier.fillMaxWidth().padding(horizontal = DhikrTheme.spacing.gutter)) {
             item { MonoLabel("Add to after-prayer set", color = c.ink); Spacer(Modifier.height(12.dp)) }
             if (state.addable.isEmpty()) {
-                item { Text("Every library dhikr is already in the set.", color = c.inkMuted, style = DhikrTheme.type.body) }
+                item { Text("All dhikr are already in the set.", color = c.inkMuted, style = DhikrTheme.type.body) }
             }
             items(state.addable, key = { it.id }) { d ->
                 Hairline()

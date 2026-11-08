@@ -66,7 +66,7 @@ History
 Settings
 ```
 
-- **Bottom bar**: four text labels in monospace caps (`TODAY  LIBRARY  HISTORY  SETTINGS`). The active one gets a single lit dot above it. No icons, no Material pill.
+- **Bottom bar**: four tabs, each a line icon (D-045) over a monospace caps label (`TODAY  LIBRARY  HISTORY  SETTINGS`). The active tab is lit in ink, the others faint. No Material pill.
 - **Counter** is a full-screen destination opened from Today. It hides the bottom bar for maximum focus. Back (gesture) returns to Today.
 - The app opens on **Counter** for the last active Dhikr if you used it in the last 30 minutes; otherwise on **Today**. (Adjustable in Settings.)
 

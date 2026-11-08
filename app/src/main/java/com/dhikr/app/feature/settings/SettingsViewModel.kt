@@ -27,6 +27,8 @@ class SettingsViewModel(private val repo: PreferencesRepository, haptics: Haptic
     fun setTargetHaptic(h: TargetHaptic) = save { repo.setTargetHaptic(h) }
     fun setAfterTarget(a: AfterTarget) = save { repo.setAfterTarget(a) }
     fun setSwitchSound(s: SwitchSound) = save { repo.setSwitchSound(s) }
+    fun setLockScreenEnabled(on: Boolean) = save { repo.setLockScreenEnabled(on) }
+    fun setLockScreenMode(m: com.dhikr.app.core.model.LockScreenMode) = save { repo.setLockScreenMode(m) }
     fun setReciteWhileCounting(on: Boolean) = save { repo.setReciteWhileCounting(on) }
 
     private fun save(block: suspend () -> Unit) {

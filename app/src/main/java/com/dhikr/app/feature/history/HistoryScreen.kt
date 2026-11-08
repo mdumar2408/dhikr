@@ -1,5 +1,7 @@
 package com.dhikr.app.feature.history
 
+import com.dhikr.app.design.components.IconAction
+import com.dhikr.app.design.components.DhikrIcons
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -61,18 +63,15 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
             Stat("Days", state.streaks.totalCompletedDays)
         }
         Spacer(Modifier.height(sp.s))
-        Text(
-            "A day counts when all five prayer tasbeeh and your daily targets are complete.",
-            color = c.inkFaint, style = DhikrTheme.type.bodySmall,
-        )
+        Text("Streak days: all 5 prayers + daily targets.", color = c.inkFaint, style = DhikrTheme.type.bodySmall)
 
         Spacer(Modifier.height(sp.l))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            NavArrow("‹", "Previous month", enabled = true, onClick = viewModel::onPrevMonth)
+            IconAction(DhikrIcons.ChevronLeft, "Previous month", viewModel::onPrevMonth)
             Spacer(Modifier.weight(1f))
             MonoLabel("${state.month.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${state.month.year}", color = c.ink)
             Spacer(Modifier.weight(1f))
-            NavArrow("›", "Next month", enabled = state.canGoNext, onClick = viewModel::onNextMonth)
+            IconAction(DhikrIcons.ChevronRight, "Next month", viewModel::onNextMonth, enabled = state.canGoNext)
         }
         Spacer(Modifier.height(sp.s))
         Calendar(state, viewModel::onSelectDay)
@@ -81,7 +80,7 @@ fun HistoryScreen(viewModel: HistoryViewModel) {
         Row(horizontalArrangement = Arrangement.spacedBy(sp.m), verticalAlignment = Alignment.CenterVertically) {
             Legend(DayMark.Complete, "Complete")
             Legend(DayMark.Partial, "Partial")
-            Legend(DayMark.Empty, "No activity")
+            Legend(DayMark.Empty, "None")
         }
         Spacer(Modifier.height(sp.xxl))
     }
@@ -101,16 +100,6 @@ private fun Stat(label: String, value: Int, highlight: Boolean = false) {
         Spacer(Modifier.height(6.dp))
         MonoLabel(label)
     }
-}
-
-@Composable
-private fun NavArrow(glyph: String, description: String, enabled: Boolean, onClick: () -> Unit) {
-    val c = DhikrTheme.colors
-    Box(
-        Modifier.size(48.dp).clip(RoundedCornerShape(50)).clickable(enabled = enabled, onClick = onClick)
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-    ) { Text(glyph, color = if (enabled) c.ink else c.hairline, style = DhikrTheme.type.title) }
 }
 
 @Composable
@@ -205,7 +194,7 @@ private fun DayDetailSheet(detail: DayDetail, onDismiss: () -> Unit) {
             Text(
                 when {
                     s == null || !s.hasActivity -> "Nothing was counted this day."
-                    s.isCompleted -> "Complete — all prayers and daily targets."
+                    s.isCompleted -> "Complete"
                     else -> "Prayers ${s.prayersCompleted} / 5 · daily ${s.totalCompleted} / ${s.totalTarget}"
                 },
                 color = if (s?.isCompleted == true) c.ember else c.inkMuted, style = DhikrTheme.type.body,
@@ -234,10 +223,6 @@ private fun DayDetailSheet(detail: DayDetail, onDismiss: () -> Unit) {
                         MonoLabel("${item.count} / ${item.target}", color = if (item.complete) c.ember else c.inkMuted)
                     }
                 }
-            }
-            if (detail.items.isNotEmpty()) {
-                Spacer(Modifier.height(sp.xs))
-                Text("Targets shown as they were on that day.", color = c.inkFaint, style = DhikrTheme.type.bodySmall)
             }
             Spacer(Modifier.height(sp.xl))
         }

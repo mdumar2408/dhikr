@@ -92,14 +92,19 @@ fun RoutineDots(states: List<RoutineDotState>, modifier: Modifier = Modifier) {
     }
 }
 
-/** Bottom navigation: monospace caps, one lit dot above the active label. No icons, no pill. */
+/** Bottom navigation: line icon over a monospace caps label; the active tab is lit (ink), the rest faint. No pill. */
 @Composable
-fun DotNavBar(items: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun DotNavBar(
+    items: List<Pair<String, androidx.compose.ui.graphics.vector.ImageVector>>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val c = DhikrTheme.colors
     Column(modifier.fillMaxWidth()) {
         Hairline()
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.SpaceAround) {
-            items.forEachIndexed { i, label ->
+            items.forEachIndexed { i, (label, icon) ->
                 val active = i == selectedIndex
                 Column(
                     Modifier
@@ -111,8 +116,8 @@ fun DotNavBar(items: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, 
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Canvas(Modifier.size(5.dp)) { if (active) drawCircle(c.ink, center = Offset(size.width / 2, size.height / 2)) }
-                    Spacer(Modifier.height(6.dp))
+                    DhikrIcon(icon, null, tint = if (active) c.ink else c.inkFaint, size = 22.dp)
+                    Spacer(Modifier.height(4.dp))
                     MonoLabel(label, color = if (active) c.ink else c.inkFaint)
                 }
             }

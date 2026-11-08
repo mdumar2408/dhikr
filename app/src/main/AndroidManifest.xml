@@ -10,6 +10,12 @@
          View haptics (the defaults) need no permission. -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Lock-screen counter (Phase 7): runtime permission on Android 13+, asked only when the
+         user turns "Count from the lock screen" on. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Re-show the lock-screen counter after a reboot (only if the user enabled it). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name=".DhikrApplication"
         android:allowBackup="true"
@@ -43,6 +49,44 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/dhikr_widget_info" />
+        </receiver>
+
+        <!-- Lock-screen notification buttons. Not exported: only our own PendingIntents reach it. -->
+        <receiver
+            android:name=".notification.CounterActionReceiver"
+            android:exported="false" />
+
+        <!-- Minimal counter shown over the lock screen (D-044). Not exported; opened only from our
+             notification / tile. Its own task so "Done" returns straight to the lock screen. -->
+        <activity
+            android:name=".notification.LockScreenCounterActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:showWhenLocked="true"
+            android:taskAffinity="com.dhikr.app.lockscreen"
+            android:turnScreenOn="true" />
+
+        <!-- Quick Settings tile counter (D-043). Bound only by SystemUI (BIND_QUICK_SETTINGS_TILE). -->
+        <service
+            android:name=".notification.CounterTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_dhikr"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Restores the lock-screen counter after reboot / app update. System broadcasts only. -->
+        <receiver
+            android:name=".notification.RestoreCounterReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
         </receiver>
 
         <!-- Per-widget chooser (Follow Flow / pinned dhikr), started by the launcher. -->

@@ -1,5 +1,7 @@
 package com.dhikr.app.feature.library
 
+import com.dhikr.app.design.components.DhikrIcons
+import com.dhikr.app.design.components.DhikrIcon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -125,7 +127,7 @@ private fun LibraryList(
             SearchField(state.query, onQuery)
             Spacer(Modifier.height(sp.s))
             MonoLabel(
-                if (state.canReorder) "● in routine · drag ≡ to order" else "${rows.size} found",
+                if (state.canReorder) "● in routine" else "${rows.size} found",
                 color = c.inkFaint,
             )
             Spacer(Modifier.height(sp.s))
@@ -133,7 +135,7 @@ private fun LibraryList(
         if (state.loaded && rows.isEmpty()) {
             item(key = "empty") {
                 Text(
-                    if (state.query.isBlank()) "Your library is empty. Add your first dhikr." else "No dhikr matches “${state.query}”.",
+                    if (state.query.isBlank()) "No dhikr yet" else "No matches",
                     color = c.inkMuted, style = DhikrTheme.type.body, modifier = Modifier.padding(vertical = sp.l),
                 )
             }
@@ -162,7 +164,7 @@ private fun LibraryList(
                                     )
                                     .semantics { contentDescription = "Reorder ${d.displayName}" },
                                 contentAlignment = Alignment.Center,
-                            ) { Text("≡", color = c.inkFaint, style = DhikrTheme.type.title) }
+                            ) { DhikrIcon(DhikrIcons.Drag, null, tint = c.inkFaint) }
                         }
                         Column(Modifier.weight(1f)) {
                             Text(
@@ -201,20 +203,25 @@ private fun LibraryList(
 @Composable
 private fun SearchField(query: String, onQuery: (String) -> Unit) {
     val c = DhikrTheme.colors
-    Box(
+    Row(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .border(1.dp, c.hairline, RoundedCornerShape(24.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (query.isEmpty()) Text("Search  ·  سبحان  ·  SubhanAllah", color = c.inkFaint, style = DhikrTheme.type.body)
-        BasicTextField(
-            value = query, onValueChange = onQuery, singleLine = true,
-            textStyle = DhikrTheme.type.body.copy(color = c.ink),
-            cursorBrush = SolidColor(c.ink),
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Search library" },
-        )
+        DhikrIcon(DhikrIcons.Search, null, tint = c.inkFaint, size = 20.dp)
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.weight(1f)) {
+            if (query.isEmpty()) Text("Search", color = c.inkFaint, style = DhikrTheme.type.body)
+            BasicTextField(
+                value = query, onValueChange = onQuery, singleLine = true,
+                textStyle = DhikrTheme.type.body.copy(color = c.ink),
+                cursorBrush = SolidColor(c.ink),
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Search library" },
+            )
+        }
     }
 }
 
@@ -226,6 +233,12 @@ private fun AddPill(onAdd: () -> Unit, modifier: Modifier) {
             .clip(RoundedCornerShape(50))
             .background(c.ink)
             .clickable(onClick = onAdd)
-            .padding(horizontal = 22.dp, vertical = 14.dp),
-    ) { Text("+ Add dhikr", color = c.canvas, style = DhikrTheme.type.bodySmall) }
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            DhikrIcon(DhikrIcons.Add, null, tint = c.canvas, size = 18.dp)
+            Spacer(Modifier.width(8.dp))
+            Text("Add dhikr", color = c.canvas, style = DhikrTheme.type.bodySmall)
+        }
+    }
 }

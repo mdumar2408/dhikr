@@ -70,6 +70,11 @@ import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.haptics.HapticPlayer
 import com.dhikr.app.audio.AudioCuePlayer
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.dhikr.app.design.components.DhikrIcon
+import com.dhikr.app.design.components.DhikrIcons
+import com.dhikr.app.design.components.IconAction
 
 @Composable
 fun CounterScreen(viewModel: CounterViewModel, haptics: HapticPlayer, audio: AudioCuePlayer, onBack: () -> Unit) {
@@ -143,10 +148,7 @@ fun CounterContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(Modifier.fillMaxWidth().height(sp.touchTarget), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(sp.touchTarget).clip(RoundedCornerShape(50)).clickable(onClick = onBack),
-                        contentAlignment = Alignment.Center,
-                    ) { Text("‹", color = c.ink, style = DhikrTheme.type.title) }
+                    IconAction(DhikrIcons.Back, "Back", onBack)
                     MonoLabel(
                         when {
                             state.context.isPrayer -> "${state.context.label} · ${state.position} / ${state.routineSize}"
@@ -161,7 +163,7 @@ fun CounterContent(
                 if (dhikr == null) {
                     Spacer(Modifier.height(sp.xl))
                     Text(
-                        if (state.context.isPrayer) "Your after-prayer set is empty. Add dhikr to it in Library." else "Enable a dhikr in your library to start.",
+                        if (state.context.isPrayer) "After-prayer set is empty" else "No dhikr in your routine",
                         color = c.inkMuted, style = DhikrTheme.type.body, textAlign = TextAlign.Center,
                     )
                 } else {
@@ -211,8 +213,8 @@ fun CounterContent(
                 Spacer(Modifier.height(sp.s))
                 MonoLabel(
                     when {
-                        state.sessionComplete -> "${state.context.label} complete · extra"
-                        state.complete -> "Complete · / ${state.target}"
+                        state.sessionComplete -> "${state.context.label} complete"
+                        state.complete -> "/ ${state.target} ✓"
                         else -> "/ ${state.target}"
                     },
                     color = if (state.complete) c.ember else c.inkMuted,
@@ -224,18 +226,16 @@ fun CounterContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                Modifier.defaultMinSize(56.dp, 48.dp).clip(RoundedCornerShape(50)).clickable(onClick = onUndo).padding(horizontal = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) { MonoLabel("Undo") }
+            IconAction(DhikrIcons.Undo, "Undo", onUndo, tint = c.inkMuted)
             if (dhikr?.audioRef != null) {
                 // Quick toggle for "recite while counting" — only when this dhikr has a recording.
-                Box(
-                    Modifier.defaultMinSize(56.dp, 48.dp).clip(RoundedCornerShape(50)).clickable(onClick = onToggleRecite)
-                        .semantics { contentDescription = "Recite while counting: ${if (state.sound.reciteWhileCounting) "on" else "off"}" }
-                        .padding(horizontal = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) { MonoLabel(if (state.sound.reciteWhileCounting) "♪ On" else "♪ Off", color = if (state.sound.reciteWhileCounting) c.ink else c.inkFaint) }
+                val on = state.sound.reciteWhileCounting
+                IconAction(
+                    if (on) DhikrIcons.SoundOn else DhikrIcons.SoundOff,
+                    "Recite while counting: ${if (on) "on" else "off"}",
+                    onToggleRecite,
+                    tint = if (on) c.ink else c.inkFaint,
+                )
             }
             HoldToReset(onReset)
         }
@@ -253,9 +253,12 @@ private fun HoldToReset(onReset: () -> Unit) {
     val currentOnReset by rememberUpdatedState(onReset)
     val fill = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    // A short tap shows "Hold" briefly, so the gesture is discoverable without permanent text.
+    var hint by remember { mutableStateOf(false) }
+    LaunchedEffect(hint) { if (hint) { kotlinx.coroutines.delay(1_200); hint = false } }
     Row(
         Modifier
-            .defaultMinSize(56.dp, 48.dp)
+            .defaultMinSize(48.dp, 48.dp)
             .clip(RoundedCornerShape(50))
             .semantics {
                 contentDescription = "Reset current dhikr. Touch and hold."
@@ -271,20 +274,26 @@ private fun HoldToReset(onReset: () -> Unit) {
                         currentOnReset()
                     }
                     waitForUpOrCancellation()
+                    if (job.isActive) hint = true
                     job.cancel()
                     scope.launch { fill.animateTo(0f, tween(150)) }
                 }
             }
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Canvas(Modifier.size(16.dp)) {
-            val stroke = 2.dp.toPx()
-            drawCircle(c.hairline, style = Stroke(stroke))
-            drawArc(c.ink, -90f, 360f * fill.value, false, style = Stroke(stroke, cap = StrokeCap.Round))
+        if (hint) {
+            MonoLabel("Hold", color = c.ink)
+            Spacer(Modifier.width(8.dp))
         }
-        Spacer(Modifier.width(8.dp))
-        MonoLabel("Hold to reset")
+        Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+            // The ring fills around the reset icon while holding.
+            Canvas(Modifier.size(36.dp)) {
+                val stroke = 2.dp.toPx()
+                drawArc(c.ink, -90f, 360f * fill.value, false, style = Stroke(stroke, cap = StrokeCap.Round))
+            }
+            DhikrIcon(DhikrIcons.Reset, null, tint = c.inkMuted, size = 22.dp)
+        }
     }
 }
 
@@ -323,11 +332,11 @@ private fun NextCard(a: Announcement, context: CountContext) {
         if (a.routineComplete && context.isPrayer) {
             MonoLabel("${context.label} tasbeeh complete", color = c.ink)
             Spacer(Modifier.height(6.dp))
-            Text("May Allah accept it. Extra taps are still counted.", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
+            Text("May Allah accept it.", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
         } else if (a.routineComplete) {
             MonoLabel(if (a.round == 1) "Routine complete" else "Round ${a.round} complete", color = c.ink)
             Spacer(Modifier.height(6.dp))
-            Text("Keep tapping to begin round ${a.round + 1}", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
+            Text("Tap to start round ${a.round + 1}", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
         } else if (a.next != null) {
             MonoLabel("Next", color = c.inkMuted)
             Text(

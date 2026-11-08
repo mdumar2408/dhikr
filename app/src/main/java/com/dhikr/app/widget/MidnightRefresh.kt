@@ -19,8 +19,11 @@ import java.util.concurrent.TimeUnit
  */
 class MidnightRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        applicationContext.appContainer.engine.refreshDate()
+        val c = applicationContext.appContainer
+        c.engine.refreshDate()
         DhikrWidget().updateAll(applicationContext)
+        // The lock-screen refresher reacts to the date change too; this makes sure it runs now.
+        com.dhikr.app.notification.LockScreenCounter.refresh(applicationContext, c.engine.state.value, c.preferences.prefs.value)
         MidnightRefresh.schedule(applicationContext)
         return Result.success()
     }

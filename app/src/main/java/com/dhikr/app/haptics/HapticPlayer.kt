@@ -93,6 +93,21 @@ class HapticPlayer(context: Context) {
 
     private fun waveform(timings: LongArray) = vibrate(VibrationEffect.createWaveform(timings, -1))
 
+    /**
+     * Target cue where there is no View to perform haptics on (lock-screen notification actions).
+     * View-only constants (Confirm) fall back to the Double buzz waveform.
+     */
+    fun playTargetWithoutView(h: TargetHaptic) {
+        when (h) {
+            TargetHaptic.Off -> Unit
+            TargetHaptic.Thud ->
+                if (Build.VERSION.SDK_INT >= 29) vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+                else waveform(longArrayOf(0, 30))
+            TargetHaptic.ThreeBeads -> waveform(longArrayOf(0, 10, 80, 10, 80, 14))
+            TargetHaptic.DoubleBuzz, TargetHaptic.Confirm -> waveform(longArrayOf(0, 45, 90, 45))
+        }
+    }
+
     private fun vibrate(effect: VibrationEffect) {
         val v = vibrator ?: return
         if (Build.VERSION.SDK_INT >= 33) {

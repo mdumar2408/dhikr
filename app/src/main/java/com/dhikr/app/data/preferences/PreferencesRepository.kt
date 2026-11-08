@@ -68,6 +68,10 @@ class PreferencesRepository(private val store: DataStore<UserPreferences>, scope
     suspend fun setTargetHaptic(v: TargetHaptic) = updateFeel { it.copy(targetHaptic = v) }
     suspend fun setAfterTarget(v: AfterTarget) = updateFeel { it.copy(afterTarget = v) }
 
+    suspend fun setLockScreenEnabled(on: Boolean) = store.updateData { it.copy(lockScreen = it.lockScreen.copy(enabled = on)) }
+    suspend fun setLockScreenMode(m: com.dhikr.app.core.model.LockScreenMode) =
+        store.updateData { it.copy(lockScreen = it.lockScreen.copy(mode = m)) }
+
     suspend fun setSwitchSound(v: SwitchSound) = store.updateData { it.copy(sound = it.sound.copy(switchSound = v)) }
     suspend fun setReciteWhileCounting(v: Boolean) = store.updateData { it.copy(sound = it.sound.copy(reciteWhileCounting = v)) }
 

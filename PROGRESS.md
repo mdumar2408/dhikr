@@ -1,5 +1,17 @@
 # Development Progress
 
+## UI clean-up (2026-11-08)
+
+- Own line icons (D-045) in the nav bar and on the counter, history, library and lock-screen counter. Helper paragraphs cut to short hints; repeated headings removed. Build and 80 unit tests pass; checked on the phone (Today, Counter, Settings, Library).
+
+## Phase 7 (part 1) — Lock-screen counting (built 2026-11-08; Glyph deferred by the owner)
+
+- Ongoing notification "Asr · SubhanAllah — 12 / 33 · Asr 3/6" with a progress bar and **+1 / Undo** that work without unlocking (D-041). Settings → Lock screen: On/Off (asks for the notification permission when turned on) and mode Prayer tasbeeh / Daily targets.
+- Same CounterEngine as the app and widget. Undo targets the context of the last lock-screen tap. A target buzz plays when a tap finishes a dhikr. Restored after reboot or update. Midnight rollover.
+- Tests: **80 unit pass** (incl. LockScreenContent).
+- On device: permission granted by the owner. The notification was posted ("Asr · SubhanAllah — 1 / 33 · Asr · 3/6", 2 actions, public) but **didn't appear on the lock screen**. Cause: the phone's `lock_screen_show_notifications=0` (user setting) **and** `lock_screen_show_silent_notifications=0`, which hides LOW-importance channels. Fixed with D-042 (DEFAULT importance, silent). Settings now warns when the phone hides all lock-screen notifications. The owner enabled lock-screen notifications → the counter shows on the lock screen ("Asr · Alhamdulillah" + progress). **+1 from the lock screen asked for the PIN and didn't count** (stayed 7/33), so Nothing OS forces unlock for notification actions (D-043). A **Quick Settings tile** prototype was built, but Nothing OS doesn't open Quick Settings while locked (kept for use after unlock). **Solution (D-044): tapping the notification opens a minimal counter over the lock screen — owner confirmed it opens without the PIN.** Notification +1/Undo stay for use after unlock.
+- Still to check by hand: counts made on the over-lock screen show in the app/widget, Done returns to the lock screen.
+
 ## Phase 6 — Home-screen widget (built 2026-11-08, awaiting on-home-screen check)
 
 - Glance widget, compact (name, dot-matrix count, target, whole widget = +1) and expanded (count area = +1, 14-bead progress, Arabic in dots, transliteration, Flow/Pinned + ♪). Tapping the right side opens the app.

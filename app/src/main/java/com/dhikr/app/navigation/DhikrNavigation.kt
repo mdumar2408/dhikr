@@ -16,6 +16,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.dhikr.app.appContainer
+import com.dhikr.app.design.components.DhikrIcons
 import com.dhikr.app.design.components.DotNavBar
 import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.feature.counter.CounterScreen
@@ -44,7 +45,12 @@ import kotlinx.serialization.Serializable
 @Serializable data class CounterRoute(val context: String = "daily", val dhikrId: Long? = null) : NavKey
 
 private val tabs: List<NavKey> = listOf(TodayRoute, LibraryRoute, HistoryRoute, SettingsRoute)
-private val tabLabels = listOf("Today", "Library", "History", "Settings")
+private val tabLabels = listOf(
+    "Today" to DhikrIcons.Today,
+    "Library" to DhikrIcons.Library,
+    "History" to DhikrIcons.History,
+    "Settings" to DhikrIcons.Settings,
+)
 
 /** Tabs are top-level: the stack is [Today] or [Today, tab], with Counter pushed on top. */
 private fun NavBackStack<NavKey>.selectTab(tab: NavKey) {

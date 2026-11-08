@@ -13,6 +13,8 @@ import com.dhikr.app.data.preferences.PreferencesRepository
 import com.dhikr.app.data.repository.DhikrRepository
 import com.dhikr.app.haptics.HapticPlayer
 import com.dhikr.app.widget.WidgetRefresher
+import com.dhikr.app.widget.MidnightRefresh
+import com.dhikr.app.notification.LockScreenCounter
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +67,10 @@ class DhikrApplication : Application() {
         container // start seeding / loading early
         // After the container exists (the refresher reads it): keep widgets in step with the app.
         WidgetRefresher.start(this, container.appScope)
+        // …and the lock-screen counter (posts only if the user enabled it and allowed notifications).
+        LockScreenCounter.startRefresher(this, container.appScope)
+        // Widgets and the lock-screen counter both roll over at midnight; one cheap one-time job.
+        MidnightRefresh.schedule(this)
     }
 }
 

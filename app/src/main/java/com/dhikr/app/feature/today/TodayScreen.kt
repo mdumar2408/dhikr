@@ -82,7 +82,7 @@ fun TodayContent(
                     buildString {
                         append("● ")
                         if (state.streak > 0) append("${state.streak}-day streak")
-                        if (state.dayComplete) append(if (state.streak > 0) " · today complete" else "Day complete — all prayers and targets")
+                        if (state.dayComplete) append(if (state.streak > 0) " · today complete" else "Day complete")
                     },
                     color = if (state.dayComplete) c.ember else c.inkMuted,
                 )
@@ -93,13 +93,7 @@ fun TodayContent(
         item { PrayerCard(state, onOpenPrayer, onOpenLibrary) }
         item { DailyCard(state, onOpenDaily, onOpenLibrary) }
 
-        if (state.rows.isNotEmpty()) {
-            item {
-                Spacer(Modifier.height(sp.l))
-                MonoLabel("Daily targets")
-                Spacer(Modifier.height(sp.xs))
-            }
-        }
+        if (state.rows.isNotEmpty()) item { Spacer(Modifier.height(sp.l)) }
         items(state.rows, key = { it.id }) { row ->
             Hairline()
             Column(Modifier.fillMaxWidth().clickable { onOpenDaily(row.id) }.padding(vertical = sp.s)) {
@@ -148,9 +142,9 @@ private fun PrayerCard(state: TodayUiState, onOpenPrayer: (CountContext) -> Unit
         }
         if (!state.hasPrayerSet) {
             Spacer(Modifier.height(sp.s))
-            Text("Your after-prayer set is empty.", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
+            Text("No after-prayer set yet", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
             Spacer(Modifier.height(sp.xs))
-            Text("Set it up in Library", color = c.ink, style = DhikrTheme.type.bodySmall,
+            Text("Set up ›", color = c.ink, style = DhikrTheme.type.bodySmall,
                 modifier = Modifier.clickable(onClick = onOpenLibrary).padding(vertical = 8.dp))
             return@Column
         }
@@ -164,7 +158,7 @@ private fun PrayerCard(state: TodayUiState, onOpenPrayer: (CountContext) -> Unit
         Spacer(Modifier.height(sp.m))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (allDone) "All five complete" else "Next: ${next?.label ?: "—"}",
+                if (allDone) "All five complete" else "Next · ${next?.label ?: "—"}",
                 color = if (allDone) c.ember else c.ink, style = DhikrTheme.type.body,
             )
             Spacer(Modifier.weight(1f))
@@ -237,11 +231,11 @@ private fun DailyCard(state: TodayUiState, onOpenDaily: (Long?) -> Unit, onOpenL
             if (hasTargets) {
                 Text("${state.done} / ${state.totalTarget}", color = c.ink, style = DhikrTheme.type.title)
                 Text(
-                    if (state.dailyComplete) "Complete · keep going" else "Continue · ${state.currentTransliteration}",
+                    if (state.dailyComplete) "Complete" else state.currentTransliteration,
                     color = if (state.dailyComplete) c.ember else c.inkMuted, style = DhikrTheme.type.bodySmall, maxLines = 1,
                 )
             } else {
-                Text("No daily targets yet. Enable dhikr in Library.", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
+                Text("No targets yet · Library ›", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
             }
         }
     }
