@@ -1,102 +1,47 @@
 package com.dhikr.app
 
-import android.os.Build
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dhikr.app.design.theme.DhikrTheme
+import com.dhikr.app.navigation.DhikrNavigation
 
 /**
- * Phase 0: the single entry point of the app.
- *
- * `ComponentActivity` is the minimal AndroidX Activity that can host Jetpack Compose.
- * The OS calls [onCreate] when the activity is created (first launch, or re-creation
- * after a configuration change such as rotation or a theme switch).
- *
- * For now it only shows device facts so we can confirm, on the real Nothing Phone (2a),
- * which Android API level and build we are actually running on.
+ * Single activity. The UI is Compose; screens are Navigation 3 entries (see DhikrNavigation).
+ * State lives in the AppContainer stores, not here — the activity is recreated on rotation,
+ * theme and locale changes.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Draw behind the status and navigation bars (the Android 15+ default for apps targeting 35+).
         enableEdgeToEdge()
-        // setContent replaces XML layouts: the UI is a tree of @Composable functions.
+        val prefsStore = appContainer.preferencesStore
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
-                DeviceInfoScreen(DeviceInfo.current())
+            val prefs by prefsStore.prefs.collectAsStateWithLifecycle()
+            DhikrTheme(prefs.themeMode) {
+                SystemBars(DhikrTheme.colors.isDark)
+                DhikrNavigation()
             }
         }
     }
-}
 
-/** Plain data describing the device. Read once from [Build]; no business logic in the UI. */
-data class DeviceInfo(
-    val manufacturer: String,
-    val model: String,
-    val androidRelease: String,
-    val sdkInt: Int,
-    val buildDisplay: String,
-) {
-    companion object {
-        fun current() = DeviceInfo(
-            manufacturer = Build.MANUFACTURER,
-            model = Build.MODEL,
-            androidRelease = Build.VERSION.RELEASE,
-            sdkInt = Build.VERSION.SDK_INT,
-            // On Nothing phones this string contains the Nothing OS build identifier.
-            buildDisplay = Build.DISPLAY,
-        )
+    /** Status/navigation bar icons follow the app theme (which can differ from the system theme). */
+    @Composable
+    private fun SystemBars(dark: Boolean) {
+        LaunchedEffect(dark) {
+            val style = if (dark) {
+                SystemBarStyle.dark(Color.TRANSPARENT)
+            } else {
+                SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+            }
+            enableEdgeToEdge(style, style)
+        }
     }
-}
-
-@Composable
-fun DeviceInfoScreen(info: DeviceInfo, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .safeDrawingPadding()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("DHIKR", color = Color.White, fontSize = 40.sp, fontFamily = FontFamily.Monospace)
-        Text("Phase 0 · environment check", color = Color.Gray, fontSize = 14.sp)
-        InfoLine("Device", "${info.manufacturer} ${info.model}")
-        InfoLine("Android", "${info.androidRelease} (API ${info.sdkInt})")
-        InfoLine("Build", info.buildDisplay)
-    }
-}
-
-@Composable
-private fun InfoLine(label: String, value: String) {
-    Column {
-        Text(label.uppercase(), color = Color.Gray, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-        Text(value, color = Color.White, fontSize = 18.sp)
-    }
-}
-
-/** Previews render in Android Studio's design pane without a device. */
-@Preview
-@Composable
-private fun DeviceInfoScreenPreview() {
-    DeviceInfoScreen(
-        DeviceInfo("Nothing", "A142", "16", 36, "Pacman-B4.1-preview"),
-    )
 }

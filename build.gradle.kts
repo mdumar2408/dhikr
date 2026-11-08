@@ -6,4 +6,5 @@ plugins {
     // plugin is not needed. The Compose compiler plugin is still required and its
     // version must match the Kotlin version.
     alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
 }

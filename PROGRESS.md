@@ -1,5 +1,39 @@
 # Development Progress
 
+## Tooling: Claude Code skills (2026-11-08)
+
+- 16 vendored skills + 5 project skills in `.claude/skills/`; `CLAUDE.md` created. Report: `docs/SKILLS_SETUP_REPORT.md`
+- [ ] Confirm discovery in a new session opened in `D:\Work\Github\dhikr`
+
+## Phase 1 — Foundation and design system (in progress)
+
+Step 1 (2026-11-08): visual design spec written → `docs/DESIGN_SPEC.md`.
+Step 2 (2026-11-08): design answers recorded (ember accent, Noto Naskh, light and dark). Bead Lab explored animation and haptics on the device (no haptic primitives on the Phone (2a)). Owner picked the defaults: **Slide, Soft spring, Clock tick, Confirm**, all configurable. Added **Flow** (§13): auto-advance through the library routine when a target is reached (D-015 to D-017).
+Step 3 (2026-11-08): **Phase 1 implemented** and verified on the Phone (2a):
+- Navigation 3 (D-010). Theme tokens light and dark plus system (D-014). Dot-matrix engine (font, `DotGrid`, Arabic raster path, animated `DotMatrixText`, `DotMatrixBitmap`). Components (`BeadString` Slide/Ring/Row, `BeadRing`, `BeadProgress`, `BeadPad`, `DotNavBar`, `RoutineDots`, `PillChip`).
+- Pure `FlowPolicy` (D-015) with an in-memory store (D-018). `HapticPlayer` (D-013). Screens: Today, Counter (Flow + NEXT card + undo + swipe), Library (enable toggle), History (calendar shell), Settings (theme + counting feel with live preview).
+- `testDebugUnitTest`: **20/20 pass** (DotMatrixTest 8, FlowPolicyTest 12). `assembleDebug` OK. Installed over wireless adb.
+- On device: Today renders the shaped Arabic in dots. 33 taps on SubhanAllah → NEXT card → Alhamdulillah 0/33 (Flow 2/4). Light theme correct. No crashes in logcat.
+- Not yet done: lint run, Compose UI tests (planned with Phase 3's engine), hold-to-reset (Phase 3), library add/edit/reorder (Phase 2).
+- Known limitation: counts and settings are in memory and reset when the app process dies (fixed by Phase 2 persistence).
+
+Original plan:
+1. Package skeleton: `design/{theme,dotmatrix,components}`, `feature/{today,counter,library,history,settings}`, `navigation/`
+2. Theme: colour, type and spacing tokens as Kotlin objects + `DhikrTheme` (dark/light)
+3. Dot-matrix engine: `DotMatrixFont` (5×7 digits + Latin caps), `DotMatrixRenderer` (glyph → grid; text/Arabic → shaped bitmap → sampled grid), `DotMatrixText` (Compose Canvas, animated dots), `DotMatrixBitmap` (for widgets later)
+4. Components: `BeadRow`, `BeadRing`, `BeadPad`, `DotNavBar`, `HairlineRow`
+5. Navigation Compose with 4 destinations + full-screen Counter route; static placeholder data, **no database yet** (Phase 2)
+6. Counter screen layout with local in-memory count (real engine is Phase 3)
+7. Unit tests: font glyph integrity, renderer sampling; Compose preview for each screen
+
+Acceptance criteria:
+- [x] App launches into Today; bottom bar switches the 4 destinations; back works as expected
+- [x] Counter opens from Today, hides the bar, counts on pad tap (in memory), and Flow advances at the target
+- [x] Dot-matrix digits render crisply at counter and display sizes; Arabic renders correctly shaped (joined letters) when sampled to dots
+- [x] Dark and light themes both render with tokens only (no hard-coded colours in screens)
+- [x] Unit tests pass (20/20); `assembleDebug` builds; runs on the Phone (2a) without crashes
+- [x] TECHNICAL_DECISIONS.md updated (D-010, D-012 to D-018)
+
 ## Phase 0 — Environment and platform feasibility (in progress)
 
 Done (2026-11-08):
