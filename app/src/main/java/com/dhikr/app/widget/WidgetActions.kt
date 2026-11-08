@@ -29,11 +29,14 @@ class IncrementAction : ActionCallback {
         val engine = container.engine
         // The tap may have cold-started the process: wait for today's counts, or we'd count on nothing.
         withTimeoutOrNull(5_000) { engine.awaitLoaded() } ?: return
-        val pinned = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)[DhikrWidget.KEY_PINNED]
-        if (pinned != null) {
-            engine.incrementDhikr(CountContext.Daily, pinned)
-        } else {
-            engine.increment(CountContext.Daily, container.preferences.prefs.value.feel.afterTarget)
+        val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId)
+        when (val mode = WidgetMode.from(prefs[DhikrWidget.KEY_MODE], prefs[DhikrWidget.KEY_PINNED])) {
+            is WidgetMode.Pinned -> engine.incrementDhikr(CountContext.Daily, mode.dhikrId)
+            WidgetMode.Daily -> engine.increment(CountContext.Daily, container.preferences.prefs.value.feel.afterTarget)
+            // Same prayer Today suggests, decided now (not when the widget last drew). All done → no count.
+            WidgetMode.Prayer -> engine.state.value.nextPrayer()?.let { prayer ->
+                engine.increment(prayer, com.dhikr.app.core.model.AfterTarget.NextDhikr)
+            }
         }
         // Make the write durable before the system may stop the process, then redraw.
         withTimeoutOrNull(3_000) { engine.flush() }
@@ -52,7 +55,7 @@ object WidgetRefresher {
         val engine = app.appContainer.engine
         scope.launch {
             engine.state
-                .map { s -> s.date to s.session(CountContext.Daily).let { it.counts to it.library } }
+                .map { s -> s.date to s.sessions.mapValues { (_, f) -> f.counts to f.library } }
                 .distinctUntilChanged()
                 .drop(1)
                 .debounce(600)

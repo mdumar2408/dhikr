@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -78,14 +79,17 @@ class DhikrWidget : GlanceAppWidget() {
         provideContent {
             val engineState by container.engine.state.collectAsState()
             val prefs by container.preferences.prefs.collectAsState()
-            val pinned = currentState<Preferences>()[KEY_PINNED]
-            val model = WidgetModel.project(engineState, prefs.feel.afterTarget, pinned)
+            val widgetPrefs = currentState<Preferences>()
+            val mode = WidgetMode.from(widgetPrefs[KEY_MODE], widgetPrefs[KEY_PINNED])
+            val model = WidgetModel.project(engineState, prefs.feel.afterTarget, mode)
             WidgetBody(model)
         }
     }
 
     companion object {
         val KEY_PINNED = longPreferencesKey("pinned_dhikr_id")
+        /** "daily" (default) or "prayer"; ignored when KEY_PINNED is set. */
+        val KEY_MODE = stringPreferencesKey("mode")
         val COMPACT = DpSize(110.dp, 110.dp)
         val EXPANDED = DpSize(250.dp, 110.dp)
     }
@@ -131,16 +135,16 @@ private fun WidgetBody(model: WidgetModel) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("DHIKR", style = label(Ink, 13))
+                Text(model.contextLabel, style = label(if (model.complete) Ember else Ink, 13))
                 Spacer(GlanceModifier.height(6.dp))
-                Text("Choose daily dhikr in the app", style = label(InkMuted, 11).copy(textAlign = TextAlign.Center))
+                Text(model.emptyMessage, style = label(if (model.complete) Ember else InkMuted, 11).copy(textAlign = TextAlign.Center))
             }
 
             size.width >= DhikrWidget.EXPANDED.width -> Row(GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 // Left: the count — tap to count.
                 Column(
                     GlanceModifier.defaultWeight().fillMaxHeight().clickable(increment)
-                        .semantics { contentDescription = "Count ${model.title}, ${model.count} of ${model.target}" },
+                        .semantics { contentDescription = "${model.contextLabel}: count ${model.title}, ${model.count} of ${model.target}" },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -157,6 +161,10 @@ private fun WidgetBody(model: WidgetModel) {
                     horizontalAlignment = Alignment.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // Where taps go — always visible (D-040).
+                    Text(model.previousDone?.let { "$it  →  ${model.contextLabel}" } ?: model.contextLabel,
+                        style = label(if (model.previousDone != null) Ember else Ink, 12), maxLines = 1)
+                    Spacer(GlanceModifier.height(4.dp))
                     ArabicDots(model.arabic, widthDp = 120, heightDp = 30)
                     Spacer(GlanceModifier.height(4.dp))
                     Text(model.title, style = TextStyle(color = Ink, fontSize = 13.sp, textAlign = TextAlign.End), maxLines = 2)
@@ -167,12 +175,14 @@ private fun WidgetBody(model: WidgetModel) {
 
             else -> Column(
                 GlanceModifier.fillMaxSize().clickable(increment)
-                    .semantics { contentDescription = "Count ${model.title}, ${model.count} of ${model.target}" },
+                    .semantics { contentDescription = "${model.contextLabel}: count ${model.title}, ${model.count} of ${model.target}" },
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(model.title.uppercase(), style = label(Ink, 10), maxLines = 1)
-                Spacer(GlanceModifier.height(4.dp))
+                // Practice first ("DAILY" / "ASR"), then the dhikr — so it's clear where the tap goes.
+                Text(model.previousDone ?: model.contextLabel, style = label(if (model.previousDone != null) Ember else Ink, 11), maxLines = 1)
+                Text(model.title.uppercase(), style = label(InkMuted, 9), maxLines = 1)
+                Spacer(GlanceModifier.height(2.dp))
                 DotNumber(model.count, model.complete, widthDp = 84, heightDp = 38)
                 Spacer(GlanceModifier.height(4.dp))
                 Text(if (model.complete) "COMPLETE" else "/ ${model.target}", style = label(if (model.complete) Ember else InkMuted, 10))

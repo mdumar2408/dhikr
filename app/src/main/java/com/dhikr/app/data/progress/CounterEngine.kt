@@ -36,6 +36,22 @@ data class EngineState(
 ) {
     fun session(context: CountContext): FlowState = sessions.getValue(context)
     val loaded: Boolean get() = countsLoaded && sessions.values.all { it.loaded }
+
+    /** A prayer's after-prayer set is non-empty and every item reached its count. */
+    fun prayerComplete(prayer: CountContext): Boolean {
+        val s = session(prayer)
+        val set = FlowPolicy.routine(s.library)
+        return set.isNotEmpty() && set.all { s.countOf(it.id) >= it.target }
+    }
+
+    /**
+     * The prayer to count now: the first (Fajr → Isha) whose set isn't complete. Shared by Today's
+     * Prayer card and the widget's Prayer mode so both always point at the same prayer.
+     * Null when there is no prayer set or all five are complete.
+     */
+    fun nextPrayer(): CountContext? = CountContext.prayers.firstOrNull { p ->
+        FlowPolicy.routine(session(p).library).isNotEmpty() && !prayerComplete(p)
+    }
 }
 
 /**

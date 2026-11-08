@@ -7,7 +7,8 @@
 - Shared engine, cold-start-safe taps, durable writes, ALPHA_8 masks, event-only refresh, midnight WorkManager job (D-036–D-039).
 - Tests: **70 unit pass** (WidgetModel incl. pinned/disabled/empty/round 2, midnight delay incl. DST, engine pinned counting). Instrumented suite **not run** (it would wipe the app's data, D-035).
 - **On device (Nothing launcher):** Settings → Add widget → system dialog → placed; it shows "SUBHANALLAH 0 / 33" in dot matrix. 5 widget taps → widget 5 and app 5/33. 3 taps in the app → home-screen widget 8 (debounced refresher). No crashes.
-- Not yet verified by hand: the expanded 4×2 size, reconfigure → pinned dhikr, midnight rollover on a real night.
+- **Follow-up (owner feedback, D-040):** widget modes Prayer tasbeeh / Daily targets / Pinned, with an always-visible practice label and a "✓ FAJR" confirmation. On device: switched the widget to Prayer → it showed "ASR · SubhanAllah 0/33 · ASR 3/6" (matching Today: Fajr and Dhuhr complete, Asr 2 of 6). One tap → "ASR: count SubhanAllah, 1 of 33" with daily unchanged at 199/199. The expanded 4×2 layout was seen on device. The chooser no longer crashes on an invalid widget id. 75 unit tests pass.
+- Not yet verified by hand: the pinned-dhikr option, midnight rollover on a real night.
 
 ### Default recitations — research result (2026-11-08)
 Only 3/10 seed phrases have freely licensed audio, all short dictionary pronunciations (not recitations), from Wikimedia Commons: Alhamdulillah and Astaghfirullah (same speaker "ArabicAudios", CC BY-SA 3.0, about 2 s each), Allahu Akbar ("Assem Khidhr", CC BY-SA 4.0, 3 s, Egyptian). Nothing usable for SubhanAllah, the tahlil, SubhanAllahi wa bihamdihi, the two light words, the hawqala, *Allahumma antas-salam*, or the salawat. Internet Archive "public domain" dhikr uploads were rejected (uploaders aren't the rights holders). **Decision pending with the owner.**

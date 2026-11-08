@@ -57,10 +57,17 @@ class DhikrWidgetConfigActivity : ComponentActivity() {
             val routine = engineState.session(com.dhikr.app.core.model.CountContext.Daily).library.filter { it.isEnabled }
                 .sortedBy { it.sortOrder }
 
-            fun choose(pinnedId: Long?) = scope.launch {
-                val glanceId = GlanceAppWidgetManager(this@DhikrWidgetConfigActivity).getGlanceIdBy(appWidgetId)
+            fun choose(mode: WidgetMode) = scope.launch {
+                // An id that isn't one of our widgets (stale launcher, bad intent) → close, don't crash.
+                val glanceId = runCatching {
+                    GlanceAppWidgetManager(this@DhikrWidgetConfigActivity).getGlanceIdBy(appWidgetId)
+                }.getOrNull() ?: run { finish(); return@launch }
                 updateAppWidgetState(this@DhikrWidgetConfigActivity, glanceId) { p ->
-                    if (pinnedId == null) p.remove(DhikrWidget.KEY_PINNED) else p[DhikrWidget.KEY_PINNED] = pinnedId
+                    when (mode) {
+                        is WidgetMode.Pinned -> { p[DhikrWidget.KEY_PINNED] = mode.dhikrId; p.remove(DhikrWidget.KEY_MODE) }
+                        WidgetMode.Prayer -> { p.remove(DhikrWidget.KEY_PINNED); p[DhikrWidget.KEY_MODE] = WidgetMode.PRAYER }
+                        WidgetMode.Daily -> { p.remove(DhikrWidget.KEY_PINNED); p[DhikrWidget.KEY_MODE] = WidgetMode.DAILY }
+                    }
                 }
                 DhikrWidget().update(this@DhikrWidgetConfigActivity, glanceId)
                 setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
@@ -72,19 +79,25 @@ class DhikrWidgetConfigActivity : ComponentActivity() {
                 LazyColumn(Modifier.fillMaxSize().background(c.canvas).safeDrawingPadding().padding(horizontal = 24.dp())) {
                     item {
                         Spacer(Modifier.height(24.dp()))
-                        MonoLabel("Widget shows", color = c.ink)
+                        MonoLabel("This widget counts", color = c.ink)
                         Spacer(Modifier.height(16.dp()))
                         Hairline()
-                        Column(Modifier.fillMaxWidth().clickable { choose(null) }.padding(vertical = 16.dp())) {
-                            Text("Follow Flow", color = c.ink, style = DhikrTheme.type.body)
-                            Text("Moves through your daily targets, like the counter", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
+                        Column(Modifier.fillMaxWidth().clickable { choose(WidgetMode.Prayer) }.padding(vertical = 16.dp())) {
+                            Text("Prayer tasbeeh", color = c.ink, style = DhikrTheme.type.body)
+                            Text("Your after-prayer list for the next unfinished prayer (Fajr → Isha), like Today's Prayer card",
+                                color = c.inkMuted, style = DhikrTheme.type.bodySmall)
+                        }
+                        Hairline()
+                        Column(Modifier.fillMaxWidth().clickable { choose(WidgetMode.Daily) }.padding(vertical = 16.dp())) {
+                            Text("Daily targets", color = c.ink, style = DhikrTheme.type.body)
+                            Text("Moves through your daily targets with Flow, like the counter", color = c.inkMuted, style = DhikrTheme.type.bodySmall)
                         }
                         Spacer(Modifier.height(16.dp()))
-                        MonoLabel("Or always one dhikr")
+                        MonoLabel("Or always one dhikr (daily targets)")
                     }
                     items(routine, key = { it.id }) { d ->
                         Hairline()
-                        Column(Modifier.fillMaxWidth().clickable { choose(d.id) }.padding(vertical = 14.dp())) {
+                        Column(Modifier.fillMaxWidth().clickable { choose(WidgetMode.Pinned(d.id)) }.padding(vertical = 14.dp())) {
                             Text(d.displayName, color = c.ink, style = DhikrTheme.type.body, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(d.arabic, color = c.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 style = DhikrTheme.type.arabicSmall.copy(textDirection = TextDirection.Rtl))
