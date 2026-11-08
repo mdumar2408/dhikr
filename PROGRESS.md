@@ -1,5 +1,17 @@
 # Development Progress
 
+## Phase 6 — Home-screen widget (built 2026-11-08, awaiting on-home-screen check)
+
+- Glance widget, compact (name, dot-matrix count, target, whole widget = +1) and expanded (count area = +1, 14-bead progress, Arabic in dots, transliteration, Flow/Pinned + ♪). Tapping the right side opens the app.
+- Per-widget: **Follow Flow** (default) or **pinned dhikr** via the launcher's reconfigure → chooser (D-036). Settings → "Add widget to home screen" (system confirmation).
+- Shared engine, cold-start-safe taps, durable writes, ALPHA_8 masks, event-only refresh, midnight WorkManager job (D-036–D-039).
+- Tests: **70 unit pass** (WidgetModel incl. pinned/disabled/empty/round 2, midnight delay incl. DST, engine pinned counting). Instrumented suite **not run** (it would wipe the app's data, D-035).
+- **On device (Nothing launcher):** Settings → Add widget → system dialog → placed; it shows "SUBHANALLAH 0 / 33" in dot matrix. 5 widget taps → widget 5 and app 5/33. 3 taps in the app → home-screen widget 8 (debounced refresher). No crashes.
+- Not yet verified by hand: the expanded 4×2 size, reconfigure → pinned dhikr, midnight rollover on a real night.
+
+### Default recitations — research result (2026-11-08)
+Only 3/10 seed phrases have freely licensed audio, all short dictionary pronunciations (not recitations), from Wikimedia Commons: Alhamdulillah and Astaghfirullah (same speaker "ArabicAudios", CC BY-SA 3.0, about 2 s each), Allahu Akbar ("Assem Khidhr", CC BY-SA 4.0, 3 s, Egyptian). Nothing usable for SubhanAllah, the tahlil, SubhanAllahi wa bihamdihi, the two light words, the hawqala, *Allahumma antas-salam*, or the salawat. Internet Archive "public domain" dhikr uploads were rejected (uploaders aren't the rights holders). **Decision pending with the owner.**
+
 ## Phase 5 — History and streaks (done 2026-11-08, checked on device)
 
 On device: completed Fajr → History shows today as partial (ring + ember outline) with streaks 0/0/0 (correct: day not complete). The day sheet shows "Prayers 1 / 5 · daily 0 / 199", Fajr in ember, and the six after-Fajr items in the order said (query orders by first count). A reinstall with `installDebug` kept the data.

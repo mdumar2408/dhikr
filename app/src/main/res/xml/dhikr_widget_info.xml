@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Home-screen widget (Phase 6).
+    - updatePeriodMillis="0": updated on events only (taps, app counting, midnight worker), never polled.
+    - widgetCategory includes keyguard: harmless today (no third-party lock-screen widgets on
+      Nothing OS 4.1, D-203) and ready if a future update adds them.
+    - configuration_optional: placing the widget needs no setup (it follows Flow); long-press →
+      Settings/Reconfigure opens the chooser.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen|keyguard"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/widget_preview"
+    android:description="@string/widget_description"
+    android:configure="com.dhikr.app.widget.DhikrWidgetConfigActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

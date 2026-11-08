@@ -174,6 +174,20 @@ class CounterEngineTest {
     }
 
     @Test
+    fun `a pinned widget counts its dhikr without moving the app's flow`() = runTest {
+        val store = FakeStore()
+        val e = engine(store)
+        advanceUntilIdle()
+        e.select(CountContext.Daily, 1) // the app is on astaghfir
+        repeat(40) { e.incrementDhikr(CountContext.Daily, 2) } // widget pinned to tasbih (target 33) — keeps counting past it
+        e.flush()
+        advanceUntilIdle()
+        assertEquals(40, e.state.value.session(CountContext.Daily).countOf(2))
+        assertEquals(1L, e.state.value.session(CountContext.Daily).manualId)
+        assertEquals(40, store.rows.value[Triple(2L, LocalDate.parse("2026-11-08"), CountContext.Daily)]?.first)
+    }
+
+    @Test
     fun `writes from elsewhere (widget) are merged when idle`() = runTest {
         val store = FakeStore()
         val e = engine(store)

@@ -20,13 +20,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-import java.util.concurrent.atomic.AtomicInteger
 
 /** Everything the counter screens need: today's date and one Flow session per context. */
 data class EngineState(
@@ -64,7 +64,7 @@ class CounterEngine(
 
     private val date = MutableStateFlow(today())
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
-    private val pending = AtomicInteger(0)
+    private val pending = MutableStateFlow(0)
 
     init {
         // Single writer: preserves tap order and keeps the main thread free.
@@ -75,7 +75,7 @@ class CounterEngine(
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to save a count", e)
                 } finally {
-                    pending.decrementAndGet()
+                    pending.update { it - 1 }
                 }
             }
         }
@@ -88,7 +88,7 @@ class CounterEngine(
         scope.launch {
             date.flatMapLatest { d -> store.observeDate(d).map { d to it } }.collect { (d, records) ->
                 // Our own writes are already reflected in memory; only merge when nothing is in flight.
-                if (pending.get() == 0) {
+                if (pending.value == 0) {
                     _state.update { applyCounts(it, d, records) }
                     saveSummaryIfChanged() // e.g. a widget counted
                 }
@@ -156,6 +156,34 @@ class CounterEngine(
         }
     }
 
+    /** Suspends until routines and today's counts are loaded (a widget tap may cold-start the process). */
+    suspend fun awaitLoaded(): EngineState = state.first { it.loaded }
+
+    /** Suspends until every queued write has reached storage (widget actions call this before returning). */
+    suspend fun flush() {
+        pending.first { it == 0 }
+    }
+
+    /**
+     * Counts one specific dhikr (a widget pinned to it) without moving the app's Flow position:
+     * Stay semantics on that dhikr, and the session's manual pick is restored afterwards.
+     */
+    fun incrementDhikr(context: CountContext, dhikrId: Long): FlowEvent {
+        ensureToday()
+        while (true) {
+            val old = _state.value
+            val session = old.session(context)
+            if (FlowPolicy.routine(session.library).none { it.id == dhikrId }) return FlowEvent.NothingEnabled
+            val (counted, event) = FlowPolicy.increment(session.copy(manualId = dhikrId), AfterTarget.Stay)
+            val restored = counted.copy(manualId = session.manualId)
+            if (_state.compareAndSet(old, old.copy(sessions = old.sessions + (context to restored)))) {
+                countedDhikr(event)?.let { d -> enqueue { store.increment(d.id, old.date, context, d.target) } }
+                saveSummaryIfChanged()
+                return event
+            }
+        }
+    }
+
     fun select(context: CountContext, dhikrId: Long) =
         _state.update { it.copy(sessions = it.sessions + (context to FlowPolicy.select(it.session(context), dhikrId))) }
 
@@ -181,7 +209,7 @@ class CounterEngine(
     }
 
     private fun enqueue(write: suspend () -> Unit) {
-        pending.incrementAndGet()
+        pending.update { it + 1 }
         writes.trySend(write)
     }
 

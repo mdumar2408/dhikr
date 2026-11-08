@@ -80,6 +80,8 @@ dependencies {
     implementation(libs.androidx.sqlite.framework)
     implementation(libs.androidx.datastore)
     implementation(libs.reorderable)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.work.runtime.ktx)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

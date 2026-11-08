@@ -41,6 +41,10 @@ import com.dhikr.app.design.components.PillChip
 import com.dhikr.app.design.dotmatrix.DotMatrixLabel
 import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.haptics.HapticPlayer
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import androidx.compose.ui.platform.LocalContext
+import com.dhikr.app.widget.DhikrWidgetReceiver
 import com.dhikr.app.audio.AudioCuePlayer
 import com.dhikr.app.audio.Cue
 import com.dhikr.app.core.model.SwitchSound
@@ -63,6 +67,22 @@ fun SettingsScreen(viewModel: SettingsViewModel, haptics: HapticPlayer, audio: A
 
         Section("Theme")
         Options(ThemeMode.entries, prefs.themeMode, { it.name }, viewModel::setTheme)
+
+        Section("Home screen")
+        val context = LocalContext.current
+        val manager = remember { AppWidgetManager.getInstance(context) }
+        if (manager.isRequestPinAppWidgetSupported) {
+            Row(Modifier.padding(top = sp.xs)) {
+                PillChip("Add widget to home screen", false, {
+                    // The launcher shows its own confirmation; nothing is added without the user's OK.
+                    manager.requestPinAppWidget(ComponentName(context, DhikrWidgetReceiver::class.java), null, null)
+                })
+            }
+        }
+        Text(
+            "Tap the widget to count. Long-press it → reconfigure to pin one dhikr instead of following Flow.",
+            color = c.inkFaint, style = DhikrTheme.type.bodySmall, modifier = Modifier.padding(top = sp.xs),
+        )
 
         Section("Counting feel")
         PreviewPad(feel.beadStyle, feel.spring) { reachedTarget ->

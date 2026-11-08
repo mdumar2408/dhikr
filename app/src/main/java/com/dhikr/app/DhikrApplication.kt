@@ -12,6 +12,7 @@ import com.dhikr.app.data.progress.RoomProgressStore
 import com.dhikr.app.data.preferences.PreferencesRepository
 import com.dhikr.app.data.repository.DhikrRepository
 import com.dhikr.app.haptics.HapticPlayer
+import com.dhikr.app.widget.WidgetRefresher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,8 @@ class DhikrApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container // start seeding / loading early
+        // After the container exists (the refresher reads it): keep widgets in step with the app.
+        WidgetRefresher.start(this, container.appScope)
     }
 }
 
