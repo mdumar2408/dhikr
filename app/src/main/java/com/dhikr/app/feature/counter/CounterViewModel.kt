@@ -3,10 +3,11 @@ package com.dhikr.app.feature.counter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dhikr.app.core.model.AfterTarget
+import com.dhikr.app.core.model.CountContext
 import com.dhikr.app.core.model.CountingFeel
 import com.dhikr.app.core.model.Dhikr
-import com.dhikr.app.data.CounterStore
 import com.dhikr.app.data.preferences.PreferencesRepository
+import com.dhikr.app.data.progress.CounterEngine
 import com.dhikr.app.design.components.RoutineDotState
 import com.dhikr.app.domain.flow.FlowEvent
 import com.dhikr.app.domain.flow.FlowPolicy
@@ -20,32 +21,41 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Shown for ~2 s after a target: what was completed and what to say next (spec §13). */
+/** Shown for ~2 s after a target: what was completed and what to say next (spec §13/§14). */
 data class Announcement(
     val completed: Dhikr,
     val next: Dhikr?,
     val round: Int,
+    /** The whole routine (daily) or the whole after-prayer set (prayer) is done. */
     val routineComplete: Boolean,
     val serial: Long,
 )
 
 data class CounterUiState(
+    val context: CountContext = CountContext.Daily,
     val dhikr: Dhikr? = null,
-    /** Count within the current round (Flow) or the running total (Stay). */
+    /** Count within the current round (Flow) or the running total (Stay / finished prayer set). */
     val displayCount: Int = 0,
     val target: Int = 33,
+    /** Show the completed (ember) state on the count. */
     val complete: Boolean = false,
+    /** Prayer only: every item of the set reached its count. */
+    val sessionComplete: Boolean = false,
     val round: Int = 1,
     val position: Int = 0,
     val routineSize: Int = 0,
     val routineDots: List<RoutineDotState> = emptyList(),
     val feel: CountingFeel = CountingFeel(),
     val announcement: Announcement? = null,
-)
+) {
+    /** Daily Flow vs. classic single counter; prayer sessions always flow. */
+    val flows: Boolean get() = context.isPrayer || feel.afterTarget == AfterTarget.NextDhikr
+}
 
 class CounterViewModel(
-    private val store: CounterStore,
+    private val engine: CounterEngine,
     private val prefs: PreferencesRepository,
+    private val context: CountContext,
     startDhikrId: Long?,
 ) : ViewModel() {
 
@@ -54,15 +64,16 @@ class CounterViewModel(
     private var serial = 0L
 
     init {
-        startDhikrId?.let(store::select)
+        engine.refreshDate()
+        startDhikrId?.let { engine.select(context, it) }
     }
 
     val uiState: StateFlow<CounterUiState> =
-        combine(store.state, prefs.prefs, announcement) { s, p, a -> project(s, p.feel, a) }
+        combine(engine.state, prefs.prefs, announcement) { s, p, a -> project(s.session(context), p.feel, a) }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5_000),
-                project(store.state.value, prefs.prefs.value.feel, null),
+                project(engine.state.value.session(context), prefs.prefs.value.feel, null),
             )
 
     /**
@@ -70,12 +81,11 @@ class CounterViewModel(
      * the matching haptic in the same frame (tactile-ui-engineering: never via LaunchedEffect).
      */
     fun onTap(): FlowEvent {
-        val event = store.increment(prefs.prefs.value.feel.afterTarget)
+        val event = engine.increment(context, prefs.prefs.value.feel.afterTarget)
+        val flows = context.isPrayer || prefs.prefs.value.feel.afterTarget == AfterTarget.NextDhikr
         when (event) {
             is FlowEvent.TargetReached ->
-                if (prefs.prefs.value.feel.afterTarget == AfterTarget.NextDhikr) {
-                    announce(Announcement(event.completed, event.next, event.round, false, ++serial))
-                }
+                if (flows) announce(Announcement(event.completed, event.next, event.round, false, ++serial))
             is FlowEvent.RoutineComplete ->
                 announce(Announcement(event.completed, null, event.round, true, ++serial))
             else -> Unit
@@ -83,17 +93,21 @@ class CounterViewModel(
         return event
     }
 
-    fun onUndo() = store.undo()
+    fun onUndo() = engine.undo(context)
+
+    fun onReset() = engine.resetCurrent(context, prefs.prefs.value.feel.afterTarget)
 
     /** Manual override: swipe on the top area moves to the previous/next Dhikr in the routine. */
     fun onSwipe(direction: Int) {
-        val s = store.state.value
+        val s = engine.state.value.session(context)
         val routine = FlowPolicy.routine(s.library)
-        val current = FlowPolicy.current(s, prefs.prefs.value.feel.afterTarget) ?: return
+        val current = FlowPolicy.current(s, mode()) ?: return
         val i = routine.indexOfFirst { it.id == current.id }
         val target = routine.getOrNull((i + direction).mod(routine.size)) ?: return
-        store.select(target.id)
+        engine.select(context, target.id)
     }
+
+    private fun mode() = if (context.isPrayer) AfterTarget.NextDhikr else prefs.prefs.value.feel.afterTarget
 
     private fun announce(a: Announcement) {
         announcement.value = a
@@ -105,25 +119,32 @@ class CounterViewModel(
     }
 
     private fun project(s: FlowState, feel: CountingFeel, a: Announcement?): CounterUiState {
+        val mode = if (context.isPrayer) AfterTarget.NextDhikr else feel.afterTarget
         val routine = FlowPolicy.routine(s.library)
-        val current = FlowPolicy.current(s, feel.afterTarget)
-            ?: return CounterUiState(feel = feel, announcement = a)
+        val current = FlowPolicy.current(s, mode)
+            ?: return CounterUiState(context = context, feel = feel, announcement = a)
         val count = s.countOf(current.id)
-        val flow = feel.afterTarget == AfterTarget.NextDhikr
-        val round = if (flow) FlowPolicy.round(routine, s.counts) else 1
-        val display = if (flow) (count - current.target * (round - 1)).coerceAtLeast(0) else count
+        val flows = mode == AfterTarget.NextDhikr
+        val round = if (flows) FlowPolicy.round(routine, s.counts) else 1
+        val sessionComplete = context.isPrayer && round > 1
+        val display = when {
+            sessionComplete || !flows -> count
+            else -> (count - current.target * (round - 1)).coerceAtLeast(0)
+        }
         return CounterUiState(
+            context = context,
             dhikr = current,
             displayCount = display,
             target = current.target,
-            complete = !flow && count >= current.target,
-            round = round,
+            complete = sessionComplete || (!flows && count >= current.target),
+            sessionComplete = sessionComplete,
+            round = if (context.isPrayer) 1 else round,
             position = routine.indexOfFirst { it.id == current.id } + 1,
             routineSize = routine.size,
             routineDots = routine.map {
                 when {
-                    it.id == current.id -> RoutineDotState.Now
-                    s.countOf(it.id) >= it.target * round -> RoutineDotState.Done
+                    it.id == current.id && !sessionComplete -> RoutineDotState.Now
+                    s.countOf(it.id) >= it.target * (if (sessionComplete) 1 else round) -> RoutineDotState.Done
                     else -> RoutineDotState.Todo
                 }
             },

@@ -19,6 +19,11 @@ data class FlowState(
     val manualId: Long? = null,
     /** False until the library has been read from storage once (avoids an "empty" flash). */
     val loaded: Boolean = false,
+    /**
+     * Daily targets loop into rounds after the routine is complete (§13). Prayer sessions don't:
+     * once the set is done, extra taps count on its last item (§14.1).
+     */
+    val loops: Boolean = true,
 ) {
     fun countOf(id: Long): Int = counts[id] ?: 0
 }
@@ -55,6 +60,7 @@ object FlowPolicy {
         val manual = state.manualId?.let { id -> routine.firstOrNull { it.id == id } }
         if (afterTarget == AfterTarget.Stay) return manual ?: routine.first()
         val round = round(routine, state.counts)
+        if (!state.loops && round > 1) return manual ?: routine.last() // session complete
         if (manual != null && state.countOf(manual.id) < manual.target * round) return manual
         return routine.first { state.countOf(it.id) < it.target * round }
     }
@@ -80,6 +86,7 @@ object FlowPolicy {
             AfterTarget.NextDhikr -> {
                 val goal = dhikr.target * roundBefore
                 when {
+                    !state.loops && roundBefore > 1 -> FlowEvent.Counted(dhikr, newCount) // extra after the set
                     newCount != goal -> FlowEvent.Counted(dhikr, newCount)
                     round(routine, next.counts) > roundBefore -> {
                         next = next.copy(manualId = null)
@@ -106,6 +113,16 @@ object FlowPolicy {
             manualId = last,
         )
     }
+
+    /** Sets one Dhikr's count back to 0 (hold-to-reset). Its taps leave the undo history. */
+    fun reset(state: FlowState, id: Long): FlowState = state.copy(
+        counts = state.counts + (id to 0),
+        history = state.history.filter { it != id },
+        manualId = id,
+    )
+
+    /** Replaces counts with what storage holds (e.g. after a widget wrote, or on a new day). */
+    fun withCounts(state: FlowState, counts: Map<Long, Int>): FlowState = state.copy(counts = counts)
 
     fun select(state: FlowState, id: Long): FlowState =
         if (state.library.any { it.id == id }) state.copy(manualId = id) else state

@@ -1,5 +1,18 @@
 # Development Progress
 
+## Phase 3 — Counter engine and the two practices (done 2026-11-08, awaiting owner review)
+
+- **CounterEngine** (D-026): persistent counts per (dhikr, date, context), atomic SQL increments, ordered write queue, merges external writes, midnight rollover. Undo is session-only (D-027).
+- **Prayer tasbeeh**: five sessions running the after-prayer set with its own counts. NEXT card on each switch, "Fajr tasbeeh complete" at the end, extra taps counted, no rounds (D-028).
+- **Today** is now a chooser: Prayer card (five prayer dots, suggested next, tap any prayer) and Daily targets card (ring, continue), with the daily rows below. "Day complete" = all five prayers + daily targets (D-023).
+- **Library → After prayer** tab: reorder the set, edit each count (1/3/10/33/34 or custom), remove, add from the library.
+- **Hold to reset** (1.2 s, filling ring, long-press accessibility action). The counter header shows "FAJR · 2 / 6".
+- Fixes from on-device screenshots: long Arabic (tahlil) uses the smaller size with capped lines; count-1 items no longer draw every bead as an "imam" bead.
+- Tests: **42 unit** (Flow incl. prayer/no-loop/reset, CounterEngine with a fake store: contexts, restart recovery, undo/reset persisted, 250 rapid taps, midnight, external merge). **12 on device** (Room repository 7, ProgressDao 4 incl. 200 concurrent increments, Compose BeadPad 50 taps = 50).
+- On device: fresh install → Today chooser → full Fajr session (104 taps) → complete → force-stop → relaunch → "Fajr: complete, 1 / 5, Next: Dhuhr".
+- Not yet hand-tested on the device: prayer-set editor gestures, hold-to-reset by hand, midnight on a real clock (unit-tested only).
+- Next: Phase 4 (audio and cues), then Phase 5 (history and streak calendar from `daily_progress`).
+
 ## Phase 2 — Persistence and Dhikr library (done 2026-11-08, awaiting owner review)
 
 - **Room 3** (D-020) schema v1: `dhikr` (soft delete, `seed_key`, `sort_order`, `search_key`), `daily_progress` keyed by **(dhikr, date, context)**, `prayer_set_item`, `daily_summary` (with `prayers_completed`). Schema JSON is in `app/schemas/`.

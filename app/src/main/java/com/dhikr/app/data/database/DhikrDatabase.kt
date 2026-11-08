@@ -14,6 +14,7 @@ import androidx.sqlite.driver.AndroidSQLiteDriver
 abstract class DhikrDatabase : RoomDatabase() {
     abstract fun dhikrDao(): DhikrDao
     abstract fun prayerSetDao(): PrayerSetDao
+    abstract fun progressDao(): ProgressDao
 
     companion object {
         const val NAME = "dhikr.db"

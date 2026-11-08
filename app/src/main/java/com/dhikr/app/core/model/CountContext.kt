@@ -22,4 +22,4 @@ enum class CountContext(val storageKey: String, val label: String) {
 }
 
 /** One entry of the after-prayer set: which Dhikr and how many times after each prayer. */
-data class PrayerSetItem(val dhikr: Dhikr, val position: Int, val target: Int)
+data class PrayerSetItem(val itemId: Long, val dhikr: Dhikr, val position: Int, val target: Int)

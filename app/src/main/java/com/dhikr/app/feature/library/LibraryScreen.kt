@@ -118,8 +118,6 @@ private fun LibraryList(
         modifier = Modifier.fillMaxSize().background(c.canvas).padding(horizontal = sp.gutter),
     ) {
         item(key = "header") {
-            DotMatrixLabel("LIBRARY", Modifier.padding(top = sp.l).width(150.dp).height(22.dp), maxPitch = 4.dp)
-            Spacer(Modifier.height(sp.m))
             SearchField(state.query, onQuery)
             Spacer(Modifier.height(sp.s))
             MonoLabel(

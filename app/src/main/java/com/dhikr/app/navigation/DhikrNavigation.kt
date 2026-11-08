@@ -21,8 +21,10 @@ import com.dhikr.app.design.theme.DhikrTheme
 import com.dhikr.app.feature.counter.CounterScreen
 import com.dhikr.app.feature.counter.CounterViewModel
 import com.dhikr.app.feature.history.HistoryScreen
-import com.dhikr.app.feature.library.LibraryScreen
+import com.dhikr.app.core.model.CountContext
+import com.dhikr.app.feature.library.LibraryHost
 import com.dhikr.app.feature.library.LibraryViewModel
+import com.dhikr.app.feature.library.PrayerSetViewModel
 import com.dhikr.app.feature.settings.SettingsScreen
 import com.dhikr.app.feature.settings.SettingsViewModel
 import com.dhikr.app.feature.today.TodayScreen
@@ -34,8 +36,11 @@ import kotlinx.serialization.Serializable
 @Serializable data object LibraryRoute : NavKey
 @Serializable data object HistoryRoute : NavKey
 @Serializable data object SettingsRoute : NavKey
-/** Full-screen counter; [dhikrId] = null → continue Flow from the current Dhikr. */
-@Serializable data class CounterRoute(val dhikrId: Long? = null) : NavKey
+/**
+ * Full-screen counter for one practice context (CountContext.storageKey: "daily" or a prayer).
+ * [dhikrId] = null → continue Flow from the current Dhikr.
+ */
+@Serializable data class CounterRoute(val context: String = "daily", val dhikrId: Long? = null) : NavKey
 
 private val tabs: List<NavKey> = listOf(TodayRoute, LibraryRoute, HistoryRoute, SettingsRoute)
 private val tabLabels = listOf("Today", "Library", "History", "Settings")
@@ -65,13 +70,17 @@ fun DhikrNavigation() {
             entryProvider = entryProvider {
                 entry<TodayRoute> {
                     TodayScreen(
-                        viewModel { TodayViewModel(container.counterStore, container.preferences) },
-                        onOpenCounter = { id -> backStack.add(CounterRoute(id)) },
+                        viewModel { TodayViewModel(container.engine, container.preferences) },
+                        onOpenPrayer = { ctx -> backStack.add(CounterRoute(ctx.storageKey)) },
+                        onOpenDaily = { id -> backStack.add(CounterRoute(CountContext.Daily.storageKey, id)) },
                         onOpenLibrary = { backStack.selectTab(LibraryRoute) },
                     )
                 }
                 entry<LibraryRoute> {
-                    LibraryScreen(viewModel { LibraryViewModel(container.dhikrRepository) })
+                    LibraryHost(
+                        viewModel { LibraryViewModel(container.dhikrRepository) },
+                        viewModel { PrayerSetViewModel(container.dhikrRepository) },
+                    )
                 }
                 entry<HistoryRoute> { HistoryScreen() }
                 entry<SettingsRoute> {
@@ -82,7 +91,14 @@ fun DhikrNavigation() {
                 }
                 entry<CounterRoute> { key ->
                     CounterScreen(
-                        viewModel { CounterViewModel(container.counterStore, container.preferences, key.dhikrId) },
+                        viewModel {
+                            CounterViewModel(
+                                container.engine,
+                                container.preferences,
+                                CountContext.fromStorage(key.context) ?: CountContext.Daily,
+                                key.dhikrId,
+                            )
+                        },
                         container.haptics,
                         onBack = { backStack.removeLastOrNull() },
                     )

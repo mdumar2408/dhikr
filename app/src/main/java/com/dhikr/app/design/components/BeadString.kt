@@ -76,7 +76,7 @@ private fun DrawScope.slide(p: Float, target: Int, complete: Boolean, c: DhikrCo
             t > 0f -> lerp(c.inkFaint, c.ink, smooth(t))
             else -> c.inkFaint
         }
-        if ((k + 1) % target == 0) {
+        if (target >= 3 && (k + 1) % target == 0) {
             // Last bead of a set: the elongated "imam" bead.
             drawRoundRect(
                 colour, Offset(x - r * 0.75f, cy - r * 1.35f),

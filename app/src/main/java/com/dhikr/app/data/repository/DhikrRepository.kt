@@ -27,8 +27,23 @@ class DhikrRepository(
 
     /** The after-prayer set, in order (D-022). */
     fun observePrayerSet(): Flow<List<PrayerSetItem>> = prayerSetDao.observeSet().map { rows ->
-        rows.map { PrayerSetItem(it.dhikr.toDomain(), it.item.position, it.item.target) }
+        rows.map { PrayerSetItem(it.item.id, it.dhikr.toDomain(), it.item.position, it.item.target) }
     }
+
+    /** Appends a Dhikr to the after-prayer set. Defaults to its own daily target, capped at 33. */
+    suspend fun addToPrayerSet(dhikrId: Long, target: Int) {
+        require(target in 1..DhikrDraft.MAX_TARGET)
+        prayerSetDao.insert(PrayerSetItemEntity(dhikrId = dhikrId, position = prayerSetDao.maxPosition() + 1, target = target))
+    }
+
+    suspend fun removeFromPrayerSet(itemId: Long) = prayerSetDao.delete(itemId)
+
+    suspend fun setPrayerTarget(itemId: Long, target: Int) {
+        require(target in 1..DhikrDraft.MAX_TARGET)
+        prayerSetDao.setTarget(itemId, target)
+    }
+
+    suspend fun reorderPrayerSet(itemIdsInOrder: List<Long>) = prayerSetDao.reorder(itemIdsInOrder)
 
     /**
      * Inserts seed entries that have never existed. Idempotent, and never resurrects a seed the

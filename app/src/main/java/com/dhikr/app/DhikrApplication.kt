@@ -3,8 +3,9 @@ package com.dhikr.app
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import com.dhikr.app.data.CounterStore
 import com.dhikr.app.data.database.DhikrDatabase
+import com.dhikr.app.data.progress.CounterEngine
+import com.dhikr.app.data.progress.RoomProgressStore
 import com.dhikr.app.data.preferences.PreferencesRepository
 import com.dhikr.app.data.repository.DhikrRepository
 import com.dhikr.app.haptics.HapticPlayer
@@ -30,15 +31,22 @@ class AppContainer(context: Context) {
     val database: DhikrDatabase by lazy { DhikrDatabase.build(context) }
     val dhikrRepository: DhikrRepository by lazy { DhikrRepository(database.dhikrDao(), database.prayerSetDao(), clock) }
     val preferences: PreferencesRepository = PreferencesRepository.create(context, appScope)
-    val counterStore = CounterStore()
     val haptics = HapticPlayer(context)
 
+    /** The one counter engine for every surface (app now; widgets/notification later). */
+    val engine: CounterEngine by lazy {
+        CounterEngine(
+            library = dhikrRepository.observeLibrary(),
+            prayerSet = dhikrRepository.observePrayerSet(),
+            store = RoomProgressStore(database.progressDao(), clock),
+            clock = clock,
+            scope = appScope,
+        )
+    }
+
     init {
-        appScope.launch {
-            dhikrRepository.ensureSeeded()
-            // The counter always sees the live, persisted library.
-            dhikrRepository.observeLibrary().collect(counterStore::setLibrary)
-        }
+        appScope.launch { dhikrRepository.ensureSeeded() }
+        engine // start loading routines and today's counts
     }
 }
 

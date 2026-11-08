@@ -118,6 +118,28 @@ class FlowPolicyTest {
     }
 
     @Test
+    fun `prayer session does not loop - extra taps go to the last item`() {
+        val s0 = FlowState(listOf(a, b), loops = false)
+        val (s, events) = tap(s0, 8)
+        assertTrue(events[5] is FlowEvent.RoutineComplete)
+        assertTrue(events[6] is FlowEvent.Counted && (events[6] as FlowEvent.Counted).dhikr == b)
+        assertTrue(events[7] is FlowEvent.Counted)
+        assertEquals(3, s.countOf(1))
+        assertEquals(5, s.countOf(2))
+        assertEquals(b, FlowPolicy.current(s, flow))
+    }
+
+    @Test
+    fun `reset puts the dhikr back to zero and removes it from undo history`() {
+        val (s, _) = tap(FlowState(listOf(a, b)), 4) // a=3, b=1
+        val r = FlowPolicy.reset(s, 1)
+        assertEquals(0, r.countOf(1))
+        assertEquals(1, r.countOf(2))
+        assertEquals(listOf(2L), r.history)
+        assertEquals(a, FlowPolicy.current(r, flow))
+    }
+
+    @Test
     fun `lowering a target below the current count completes it without a retroactive event`() {
         val big = d(1, target = 10)
         val (s, _) = tap(FlowState(listOf(big, b)), 5)
