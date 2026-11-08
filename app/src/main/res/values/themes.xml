@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The XML theme only styles what Android draws BEFORE Compose takes over
+        (the window background and the launch splash). All real UI theming lives in Compose.
+    -->
+    <style name="Theme.Dhikr" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+</resources>

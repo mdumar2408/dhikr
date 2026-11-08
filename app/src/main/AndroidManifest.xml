@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The manifest is the app's contract with the Android OS. The system reads it at
+    install time (before any code runs) to learn which components exist, which
+    permissions are requested and how the app may be launched.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- No permissions yet. Phase 0 is a blank app. -->
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Dhikr">
+
+        <!--
+            An Activity is a single full-screen entry point with its own lifecycle.
+            exported="true" lets the launcher (another app) start it; the MAIN/LAUNCHER
+            intent filter is what puts an icon in the app drawer.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
